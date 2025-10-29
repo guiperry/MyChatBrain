@@ -1,0 +1,628 @@
+.container {
+  flex: 1;
+  min-height: 100vh;
+  padding-bottom: 15vh;
+  position: relative;
+  width: 100%;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1rem;
+}
+
+.headerTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--softTextColor);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.newChatButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--bgSecondary);
+  border: none;
+  color: var(--softTextColor);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.newChatButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.userProfile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background-color: var(--bgSecondary);
+  color: var(--softTextColor);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.userProfile:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.chatContainer {
+  padding: 0 1.25rem;
+  margin-bottom: 5rem;
+}
+
+.apiKeyWarning {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #f87171;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.welcomeContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+.welcomeHeader {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.welcomeHeader h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(to right, #a78bfa, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.welcomeHeader p {
+  font-size: 1.25rem;
+  color: var(--softTextColor);
+}
+
+.examplePrompts {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.examplePrompts h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: var(--softTextColor);
+}
+
+.promptGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.promptCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background-color: var(--bgSecondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.promptCard:hover {
+  transform: translateY(-2px);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.promptCard p {
+  color: var(--softTextColor);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.resultContainer {
+  padding: 1rem 0;
+}
+
+.chatMessages {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  height: calc(100vh - 250px);
+  position: relative;
+  padding-right: 8px;
+  padding-bottom: 4rem;
+  overflow-y: auto;
+}
+
+.chatMessage {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+}
+
+.userMessage {
+  background-color: rgba(139, 92, 246, 0.05);
+}
+
+.botMessage {
+  background-color: var(--bgSecondary);
+}
+
+.messageAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background-color: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.messageContent {
+  flex: 1;
+}
+
+.messageText {
+  color: var(--softTextColor);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.downloadOptions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.downloadButton {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background-color: var(--bgSecondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--softTextColor);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.downloadButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.inputForm {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 800px;
+  padding: 0 1.25rem;
+  z-index: 40;
+}
+
+.inputContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: var(--bgSecondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+}
+
+.inputField {
+  flex: 1;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  color: var(--softTextColor);
+  font-size: 0.875rem;
+  resize: none;
+  max-height: 150px;
+}
+
+.inputField::placeholder {
+  color: var(--softTextColor);
+  opacity: 0.7;
+}
+
+.sendButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: none;
+  color: var(--softTextColor);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.sendButton:hover {
+  color: #8b5cf6;
+}
+
+.sendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Media queries for responsive design */
+@media (max-width: 768px) {
+  .welcomeHeader h2 {
+    font-size: 1.5rem;
+  }
+  
+  .welcomeHeader p {
+    font-size: 1rem;
+  }
+  
+  .promptGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .inputForm {
+    padding: 0 1rem;
+  }
+}
+
+/* AI container layout */
+.aiContainer {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Adjust main content when sidebar is present */
+.container.withSidebar {
+  margin-right: 250px;
+}
+
+@media (max-width: 1024px) {
+  .container.withSidebar {
+    margin-right: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container.withSidebar {
+    margin-right: 0;
+  }
+}
+
+.container {
+  flex: 1;
+  min-height: 100vh;
+  padding-bottom: 15vh;
+  position: relative;
+  width: 100%;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1rem;
+}
+
+.headerTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--softTextColor);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.newChatButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--bgSecondary);
+  border: none;
+  color: var(--softTextColor);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.newChatButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.userProfile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background-color: var(--bgSecondary);
+  color: var(--softTextColor);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.userProfile:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.chatContainer {
+  padding: 0 1.25rem;
+  margin-bottom: 5rem;
+}
+
+.apiKeyWarning {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #f87171;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.welcomeContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+.welcomeHeader {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.welcomeHeader h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(to right, #a78bfa, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.welcomeHeader p {
+  font-size: 1.25rem;
+  color: var(--softTextColor);
+}
+
+.examplePrompts {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.examplePrompts h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: var(--softTextColor);
+}
+
+.promptGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.promptCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background-color: var(--bgSecondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.promptCard:hover {
+  transform: translateY(-2px);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.promptCard p {
+  color: var(--softTextColor);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.resultContainer {
+  padding: 1rem 0;
+}
+
+.chatMessages {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.chatMessage {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+}
+
+.userMessage {
+  background-color: rgba(139, 92, 246, 0.05);
+}
+
+.botMessage {
+  background-color: var(--bgSecondary);
+}
+
+.messageAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background-color: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.messageContent {
+  flex: 1;
+}
+
+.messageText {
+  color: var(--softTextColor);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.downloadOptions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.downloadButton {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background-color: var(--bgSecondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--softTextColor);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.downloadButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.inputForm {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 800px;
+  padding: 0 1.25rem;
+  z-index: 40;
+}
+
+.inputContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: var(--bgSecondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+}
+
+.inputField {
+  flex: 1;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  color: var(--softTextColor);
+  font-size: 0.875rem;
+  resize: none;
+  max-height: 150px;
+}
+
+.inputField::placeholder {
+  color: var(--softTextColor);
+  opacity: 0.7;
+}
+
+.sendButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: none;
+  color: var(--softTextColor);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.sendButton:hover {
+  color: #8b5cf6;
+}
+
+.sendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Media queries for responsive design */
+@media (max-width: 768px) {
+  .welcomeHeader h2 {
+    font-size: 1.5rem;
+  }
+  
+  .welcomeHeader p {
+    font-size: 1rem;
+  }
+  
+  .promptGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .inputForm {
+    padding: 0 1rem;
+  }
+}

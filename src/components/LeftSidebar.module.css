@@ -1,0 +1,718 @@
+/* LeftSidebar.module.css */
+
+/* Main sidebar container */
+.leftSidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  background-color: var(--bgSecondary);
+  transition: width 0.3s ease;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.expanded {
+  width: 260px;
+}
+
+.collapsed {
+  width: 60px;
+}
+
+.sidebarContent {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px 8px;
+}
+
+/* Sidebar header */
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  padding: 0 8px 16px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 16px;
+}
+
+.menuButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--softTextColor);
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.menuButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.menuButton:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: -2px;
+}
+
+.sidebarTitle {
+  margin-left: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--softTextColor);
+}
+
+/* Sidebar sections */
+.sidebarSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.sidebarSection::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebarSection::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+/* New chat button */
+.newChatButton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background-color: var(--bgPrimary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--softTextColor);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 24px;
+}
+
+.newChatButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Recent promptsou  section */
+.recentPrompts{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+/* Saved chats section */
+.savedChats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--softTextColor);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 12px;
+  margin-bottom: 8px;
+}
+
+.chatList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chatItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--softTextColor);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  background: transparent;
+  border: none;
+  text-align: left;
+}
+
+.chatItem:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.chatItemText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Sidebar footer */
+.sidebarFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footerItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--softTextColor);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  background: transparent;
+  border: none;
+  text-align: left;
+}
+
+.footerItem:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.footerSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Settings panel */
+.settingsPanel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  background-color: var(--bgSecondary);
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  transition: transform 0.3s ease, width 0.3s ease;
+  overflow-y: auto;
+}
+
+.settingsOpen {
+  width: 400px;
+  transform: translateX(0);
+}
+
+.settingsClosed {
+  width: 0;
+  transform: translateX(100%);
+}
+
+.settingsContent {
+  padding: 24px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.settingsHeader {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settingsHeaderContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settingsHeader h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--softTextColor);
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--softTextColor);
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: -2px;
+}
+
+.settingsForm {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.formGroup {
+  margin-bottom: 16px;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--softTextColor);
+  margin-bottom: 8px;
+}
+
+.formGroup input[type="text"],
+.formGroup input[type="password"],
+.formGroup .selectInput {
+  width: 100%;
+  padding: 10px 12px;
+  background-color: var(--bgPrimary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--softTextColor);
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.formGroup input[type="text"]:focus,
+.formGroup input[type="password"]:focus,
+.formGroup .selectInput:focus {
+  outline: none;
+  border-color: #8b5cf6;
+}
+
+.formGroup .selectInput {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255, 255, 255, 0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+  cursor: pointer;
+}
+
+.formHint {
+  font-size: 12px;
+  color: #a0aec0;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.submitButton {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background-color: #8b5cf6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 24px;
+}
+
+.submitButton:hover {
+  background-color: #7c3aed;
+}
+
+.statusMessage {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.successMessage {
+  background-color: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.errorMessage {
+  background-color: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Prompts management styles */
+.scrollablePrompts {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 8px;
+  margin-bottom: 16px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.manageButton {
+  background: none;
+  border: none;
+  color: var(--softTextColor);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.manageButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: var(--bgSecondary);
+  border-radius: 8px;
+  padding: 16px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modalTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--softTextColor);
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: var(--softTextColor);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.closeButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.promptList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.promptItem {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.promptInput {
+  flex-grow: 1;
+  padding: 8px 12px;
+  background: var(--bgPrimary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--softTextColor);
+  font-size: 14px;
+}
+
+.deletePromptButton {
+  background: none;
+  border: none;
+  color: #f87171;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.deletePromptButton:hover {
+  background-color: rgba(248, 113, 113, 0.1);
+}
+
+.addPromptContainer {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.addPromptButton {
+  padding: 8px 16px;
+  background: #8b5cf6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.addPromptButton:hover {
+  background: #7c3aed;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cancelButton {
+  padding: 8px 16px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--softTextColor);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.cancelButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.saveButton {
+  padding: 8px 16px;
+  background: #8b5cf6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.saveButton:hover {
+  background: #7c3aed;
+}
+
+/* Prompt editor styles */
+.promptEditor {
+  margin-bottom: 16px;
+}
+
+.promptTextarea {
+  width: 100%;
+  padding: 12px;
+  background: var(--bgPrimary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--softTextColor);
+  font-size: 14px;
+  resize: vertical;
+  min-height: 120px;
+}
+
+.promptTextarea:focus {
+  outline: none;
+  border-color: #8b5cf6;
+}
+
+.saveOptions {
+  margin-bottom: 16px;
+}
+
+.saveOptionLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--softTextColor);
+  cursor: pointer;
+}
+
+.saveOptionCheckbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.editingPromptInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--softTextColor);
+  padding: 8px;
+  background-color: rgba(139, 92, 246, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+/* Saved prompts styles */
+.savedPromptsContainer {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.noSavedPrompts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  text-align: center;
+  color: var(--softTextColor);
+  opacity: 0.7;
+  padding: 0 20px;
+}
+
+.noSavedPrompts p {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.savedPromptsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.savedPromptItem {
+  background: var(--bgPrimary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.savedPromptText {
+  color: var(--softTextColor);
+  font-size: 14px;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.savedPromptTitle {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--softTextColor);
+  font-size: 15px;
+}
+
+.savedPromptActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  color: var(--softTextColor);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.actionButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .expanded {
+    width: 240px;
+  }
+
+  .settingsOpen {
+    width: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .expanded {
+    width: 100%;
+  }
+
+  .settingsOpen {
+    width: 100%;
+  }
+}

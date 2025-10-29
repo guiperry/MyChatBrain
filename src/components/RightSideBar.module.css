@@ -1,0 +1,135 @@
+.rightSidebar {
+  width: 250px;
+  background-color: var(--bgSecondary);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.25rem;
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+}
+
+.settingsSection, .modelSection {
+  margin-bottom: 1.5rem;
+}
+
+.settingsSection h3, .modelSection h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--softTextColor);
+  margin-bottom: 0.5rem;
+}
+
+.modelOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.modelButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bgPrimary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--softTextColor);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.modelButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.profileButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--bgPrimary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--softTextColor);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.2s;
+}
+
+.profileButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.userProfileIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--softTextColor);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .rightSidebar {
+    width: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .rightSidebar {
+    display: none;
+  }
+}
+
+.notesSection {
+  margin-top: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.notesSection h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--softTextColor);
+  margin-bottom: 0.5rem;
+}
+
+.obsidianButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--bgPrimary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--softTextColor);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  transition: background-color 0.2s;
+}
+
+.obsidianButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.buttonIcon {
+  font-size: 1rem;
+}
+
+.emptyNotes {
+  color: var(--softTextColor);
+  opacity: 0.7;
+  font-size: 0.875rem;
+  text-align: center;
+  margin-top: 1rem;
+}

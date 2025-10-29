@@ -1,0 +1,14 @@
+{
+    "cSpell.words": [
+        "AUTOINCREMENT",
+        "getenv",
+        "hnsw",
+        "jspdf",
+        "langchain",
+        "Langfuse",
+        "stopserver",
+        "vectorstore",
+        "weaviate"
+    ],
+    "zencoder.enableRepoIndexing": true
+}

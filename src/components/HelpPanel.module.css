@@ -1,0 +1,159 @@
+.helpPanelOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.helpPanel {
+  background-color: var(--bgSecondary);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.3s ease-out;
+}
+
+.helpHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.helpHeader h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--softTextColor);
+  margin: 0;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--softTextColor);
+  transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: -2px;
+}
+
+.helpContent {
+  padding: 24px;
+}
+
+.helpSection {
+  margin-bottom: 24px;
+}
+
+.helpSection h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--softTextColor);
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.helpSection p {
+  color: var(--softTextColor);
+  line-height: 1.6;
+  margin: 0 0 16px;
+}
+
+.featureList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.featureList li {
+  padding: 8px 0;
+  color: var(--softTextColor);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.featureName {
+  font-weight: 600;
+  color: #8b5cf6;
+}
+
+.resourceLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.resourceLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--softTextColor);
+  text-decoration: none;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.resourceLink:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.resourceLink span {
+  flex: 1;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .helpPanel {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .helpContent {
+    padding: 16px;
+  }
+}

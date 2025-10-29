@@ -1,0 +1,22 @@
+.modelSelect {
+  background-color: var(--bgSecondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--softTextColor);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  min-width: 180px;
+  appearance: menulist; /* Show the dropdown arrow */
+}
+
+.modelSelect:focus {
+  outline: none;
+  border-color: #8b5cf6;
+}
+
+/* Ensure text is visible */
+.modelSelect option {
+  background-color: var(--bgPrimary);
+  color: var(--softTextColor);
+}

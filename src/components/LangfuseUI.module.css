@@ -1,0 +1,36 @@
+.langfuseButton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--softTextColor);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  background: transparent;
+  border: none;
+  text-align: left;
+  width: 100%;
+}
+
+.langfuseButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.langfuseButton:active {
+  transform: scale(0.98);
+}
+
+.langfuseButton:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: -2px;
+}
+
+.icon {
+  color: var(--softTextColor);
+}
+
+.label {
+  flex: 1;
+}

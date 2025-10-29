@@ -1,0 +1,328 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+  z-index: 9999; /* Increased z-index to ensure it appears above the RightSideBar */
+}
+
+.settingsPanel {
+  background-color: var(--bgSecondary);
+  width: 100%;
+  max-width: 500px;
+  height: 100vh;
+  overflow-y: auto;
+  box-shadow: -5px 0 25px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease-out;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--softTextColor);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: var(--softTextColor);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tabButton {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  color: var(--softTextColor);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+}
+
+.tabButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.activeTab {
+  border-bottom: 2px solid #8b5cf6;
+  color: #8b5cf6;
+}
+
+.content {
+  padding: 20px;
+}
+
+.profileSection, .settingsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background-color: rgba(139, 92, 246, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.avatar {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background-color: rgba(139, 92, 246, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8b5cf6;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.details {
+  flex: 1;
+}
+
+.details h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--softTextColor);
+}
+
+.details p {
+  margin: 10px 0 0 0;
+  font-size: 14px;
+  color: var(--softTextColor);
+  opacity: 0.7;
+  line-height: 1.4;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--softTextColor);
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+.section h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  color: var(--softTextColor);
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: var(--softTextColor);
+}
+
+.message {
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.success {
+  background-color: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.error {
+  background-color: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.passwordInput {
+  position: relative;
+}
+
+.togglePassword {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--softTextColor);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+}
+
+.logoutSection {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 30px;
+  padding-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 6px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logoutButton:hover {
+  background-color: rgba(248, 113, 113, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.notLoggedIn {
+  text-align: center;
+  padding: 20px;
+  color: var(--softTextColor);
+}
+
+.loginLink {
+  display: inline-block;
+  margin-top: 12px;
+  color: #8b5cf6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.loginLink:hover {
+  text-decoration: underline;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.formGroup label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--softTextColor);
+}
+
+.selectInput, .textInput, .formGroup input[type="text"], .formGroup input[type="password"] {
+  padding: 10px 12px;
+  background-color: var(--bgPrimary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--softTextColor);
+  font-size: 14px;
+  width: 100%;
+}
+
+.selectInput {
+  appearance: menulist;
+}
+
+.selectInput:focus, .textInput:focus, .formGroup input:focus {
+  outline: none;
+  border-color: #8b5cf6;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.saveButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #8b5cf6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 8px;
+}
+
+.saveButton:hover {
+  background-color: #7c3aed;
+}
+
+.fullWidth {
+  grid-column: span 2;
+}

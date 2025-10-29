@@ -1,0 +1,139 @@
+/* ObsidianModal.module.css */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensure it's on top */
+  }
+  
+  .modalContent {
+    background-color: #282c34; /* Obsidian-like dark background */
+    border-radius: 8px;
+    padding: 20px;
+    width: 80%;
+    max-width: 800px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+    color: #fff; /* White text */
+  }
+  
+  .modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .headerActions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .closeButton, .settingsButton {
+    background-color: transparent;
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  .settingsPanel {
+    background-color: #333;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #444;
+  }
+
+  .settingsPanel h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #fff;
+  }
+
+  .settingRow {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+  }
+
+  .settingRow label {
+    margin-bottom: 5px;
+    color: #ddd;
+  }
+
+  .settingRow input {
+    padding: 8px;
+    background-color: #444;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 14px;
+  }
+
+  .settingActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .settingActions button {
+    padding: 6px 12px;
+    background-color: #4a5568;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .settingActions button:hover {
+    background-color: #2d3748;
+  }
+  
+  .modalBody {
+    display: flex;
+    flex-direction: column; /* Stack elements vertically */
+  }
+  
+  .markdownEditor {
+    flex: 1;
+    width: 50%;
+    padding: 10px;
+    border: 1px solid #444;
+    background-color: #333;
+    color: #fff;
+    font-family: monospace;
+    resize: vertical;
+    min-height: 300px;
+  }
+  
+  .markdownPreview {
+    flex: 1;
+    width: 50%;
+    padding: 10px;
+    border: 1px solid #444;
+    overflow: auto;
+    min-height: 300px;
+  }
+  
+  /* Add more styles to match Obsidian's appearance */
+.buttonContainer {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  justify-content: flex-end;
+}
+
+.editorContainer {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  margin-bottom: 15px;
+  height: 60vh;
+}
