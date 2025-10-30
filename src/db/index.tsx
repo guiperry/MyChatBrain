@@ -159,6 +159,120 @@ try {
       FOREIGN KEY (source_id) REFERENCES memory_nodes(id) ON DELETE CASCADE,
       FOREIGN KEY (target_id) REFERENCES memory_nodes(id) ON DELETE CASCADE
     );
+
+    -- Persona Mapping Tables
+    CREATE TABLE IF NOT EXISTS persona_users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      platform_ids TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS persona_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      session_id INTEGER,
+      started_at TEXT NOT NULL,
+      channel TEXT NOT NULL,
+      context TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (session_id) REFERENCES chat_sessions(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS persona_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER NOT NULL,
+      message_id INTEGER,
+      turn_index INTEGER NOT NULL,
+      role TEXT NOT NULL CHECK(role IN ('user', 'assistant')),
+      text TEXT NOT NULL,
+      timestamp TEXT NOT NULL,
+      FOREIGN KEY (session_id) REFERENCES persona_sessions(id),
+      FOREIGN KEY (message_id) REFERENCES chat_messages(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS sentiment_metrics (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      message_id INTEGER NOT NULL,
+      polarity REAL NOT NULL CHECK(polarity BETWEEN -1 AND 1),
+      score REAL NOT NULL CHECK(score BETWEEN 0 AND 1),
+      model_version TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (message_id) REFERENCES persona_messages(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS interest_metrics (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      topic TEXT NOT NULL,
+      weight REAL NOT NULL CHECK(weight BETWEEN 0 AND 1),
+      decay_factor REAL NOT NULL DEFAULT 0.95,
+      last_updated TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      UNIQUE(user_id, topic)
+    );
+
+    CREATE TABLE IF NOT EXISTS goal_metrics (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      description TEXT NOT NULL,
+      status TEXT NOT NULL CHECK(status IN ('active', 'completed', 'cancelled')) DEFAULT 'active',
+      confidence REAL NOT NULL CHECK(confidence BETWEEN 0 AND 1),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS personality_traits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      trait_label TEXT NOT NULL,
+      percentile REAL NOT NULL CHECK(percentile BETWEEN 0 AND 100),
+      evidence_count INTEGER NOT NULL DEFAULT 0,
+      last_updated TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      UNIQUE(user_id, trait_label)
+    );
+
+    CREATE TABLE IF NOT EXISTS error_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      severity TEXT NOT NULL CHECK(severity IN ('low', 'medium', 'high', 'critical')),
+      resolution_state TEXT NOT NULL CHECK(resolution_state IN ('open', 'resolved', 'ignored')) DEFAULT 'open',
+      details TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (session_id) REFERENCES persona_sessions(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS tool_usages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER NOT NULL,
+      tool_name TEXT NOT NULL,
+      success BOOLEAN NOT NULL,
+      latency_ms INTEGER NOT NULL,
+      parameters TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (session_id) REFERENCES persona_sessions(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS idea_nodes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      tags TEXT,
+      status TEXT NOT NULL CHECK(status IN ('draft', 'refined', 'implemented')) DEFAULT 'draft',
+      content TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
   `);
 
   // If this is the first run, create a flag file

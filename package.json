@@ -15,6 +15,11 @@
     "compile": "tsc --project tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@adaline/anthropic": "^1.8.0",
+    "@adaline/gateway": "^1.10.0",
+    "@adaline/google": "^1.9.0",
+    "@adaline/openai": "^1.10.0",
+    "@adaline/types": "^1.9.1",
     "@google/generative-ai": "^0.24.1",
     "@langchain/core": "^0.3.43",
     "@phosphor-icons/react": "^2.1.7",

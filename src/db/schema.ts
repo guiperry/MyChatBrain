@@ -71,6 +71,106 @@ export interface MemoryEdges {
   updated_at: string;
 }
 
+// Persona Mapping Tables
+export interface PersonaUsers {
+  id?: number;
+  user_id: number; // References users.id
+  platform_ids?: string; // JSON array of platform IDs
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PersonaSessions {
+  id?: number;
+  user_id: number; // References users.id
+  session_id?: number; // References chat_sessions.id
+  started_at: string;
+  channel: string; // e.g., 'web', 'api', 'slack'
+  context?: string; // JSON string with session context
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PersonaMessages {
+  id?: number;
+  session_id: number; // References persona_sessions.id
+  message_id?: number; // References chat_messages.id
+  turn_index: number;
+  role: 'user' | 'assistant';
+  text: string;
+  timestamp: string;
+}
+
+export interface SentimentMetrics {
+  id?: number;
+  message_id: number; // References persona_messages.id
+  polarity: number; // -1 to 1
+  score: number; // confidence score 0-1
+  model_version: string;
+  created_at: string;
+}
+
+export interface InterestMetrics {
+  id?: number;
+  user_id: number; // References users.id
+  topic: string;
+  weight: number; // interest strength 0-1
+  decay_factor: number; // decay rate
+  last_updated: string;
+  created_at: string;
+}
+
+export interface GoalMetrics {
+  id?: number;
+  user_id: number; // References users.id
+  description: string;
+  status: 'active' | 'completed' | 'cancelled';
+  confidence: number; // 0-1
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PersonalityTraits {
+  id?: number;
+  user_id: number; // References users.id
+  trait_label: string; // e.g., 'openness', 'conscientiousness'
+  percentile: number; // 0-100
+  evidence_count: number;
+  last_updated: string;
+  created_at: string;
+}
+
+export interface ErrorEvents {
+  id?: number;
+  session_id: number; // References persona_sessions.id
+  type: string; // error category
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  resolution_state: 'open' | 'resolved' | 'ignored';
+  details?: string; // JSON string with error details
+  created_at: string;
+}
+
+export interface ToolUsages {
+  id?: number;
+  session_id: number; // References persona_sessions.id
+  tool_name: string;
+  success: boolean;
+  latency_ms: number;
+  parameters?: string; // JSON string of tool parameters
+  created_at: string;
+}
+
+export interface IdeaNodes {
+  id?: number;
+  user_id: number; // References users.id
+  title: string;
+  tags?: string; // JSON array of tags
+  status: 'draft' | 'refined' | 'implemented';
+  content?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export const TABLES = {
   USERS: 'users',
   SETTINGS: 'settings',
@@ -79,7 +179,18 @@ export const TABLES = {
   PROMPTS: 'prompts',
   NOTES: 'notes',
   MEMORY_NODES: 'memory_nodes',
-  MEMORY_EDGES: 'memory_edges'
+  MEMORY_EDGES: 'memory_edges',
+  // Persona Mapping Tables
+  PERSONA_USERS: 'persona_users',
+  PERSONA_SESSIONS: 'persona_sessions',
+  PERSONA_MESSAGES: 'persona_messages',
+  SENTIMENT_METRICS: 'sentiment_metrics',
+  INTEREST_METRICS: 'interest_metrics',
+  GOAL_METRICS: 'goal_metrics',
+  PERSONALITY_TRAITS: 'personality_traits',
+  ERROR_EVENTS: 'error_events',
+  TOOL_USAGES: 'tool_usages',
+  IDEA_NODES: 'idea_nodes'
 } as const;
 
 // Export types with original Drizzle-style names for compatibility
