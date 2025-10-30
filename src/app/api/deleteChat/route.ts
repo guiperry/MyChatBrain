@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { getRxDBHelper } from '@/db/rxdb';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { DecodedToken } from '@/types';
-import { typedGet, typedRun } from '@/db/types';
 
 export async function DELETE(request: NextRequest) {
   try {
+    // Get RxDB helper
+    const rxdbHelper = await getRxDBHelper();
+
     // Get token from cookie
     const cookieStore = cookies();
     const token = cookieStore.get('gemini-auth-token')?.value;
@@ -25,62 +27,30 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('sessionId');
 
-    if (!sessionId) {
+    if (!sessionId?.trim()) {
       return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
     }
 
     // Parse sessionId to ensure it's a valid integer
-    const parsedSessionId = parseInt(sessionId);
-    if (isNaN(parsedSessionId)) {
+    const parsedSessionId = parseInt(sessionId.trim());
+    if (isNaN(parsedSessionId) || parsedSessionId <= 0) {
       return NextResponse.json({ error: 'Invalid session ID format' }, { status: 400 });
     }
 
-    try {
-      // Get the chat session
-      const session = typedGet<{ id: number; user_id: number | null }>(
-        db,
-        'SELECT * FROM chat_sessions WHERE id = ?',
-        [parsedSessionId]
-      );
+    // Get the chat session to verify ownership
+    const session = await rxdbHelper.getChatSession(parsedSessionId);
 
-      if (!session) {
-        throw new Error('Chat session not found');
-      }
-
-      // Check if the user owns this session
-      if (session.user_id !== decoded.userId) {
-        throw new Error('Not authorized to delete this chat session');
-      }
-
-      // Use a transaction to ensure database consistency
-      db.sqlite.exec('BEGIN TRANSACTION');
-
-      // Delete all messages in the session first (due to foreign key constraint)
-      typedRun(
-        db,
-        'DELETE FROM chat_messages WHERE session_id = ?',
-        [parsedSessionId]
-      );
-
-      // Then delete the session
-      typedRun(
-        db,
-        'DELETE FROM chat_sessions WHERE id = ?',
-        [parsedSessionId]
-      );
-
-      // Commit the transaction
-      db.sqlite.exec('COMMIT');
-    } catch (error) {
-      // Rollback the transaction if there was an error
-      try {
-        db.sqlite.exec('ROLLBACK');
-      } catch (rollbackError) {
-        console.error('Error rolling back transaction:', rollbackError);
-      }
-
-      throw error;
+    if (!session) {
+      return NextResponse.json({ error: 'Chat session not found' }, { status: 404 });
     }
+
+    // Check if the user owns this session (convert user ID for comparison)
+    if (session.user_id !== null && session.user_id !== decoded.userId) {
+      return NextResponse.json({ error: 'Not authorized to delete this chat session' }, { status: 403 });
+    }
+
+    // Delete the chat session (RxDB handles cascading deletes automatically)
+    await rxdbHelper.deleteChatSession(parsedSessionId);
 
     return NextResponse.json({ message: 'Chat session deleted successfully' });
   } catch (error) {
@@ -88,15 +58,12 @@ export async function DELETE(request: NextRequest) {
 
     // Provide more specific error messages based on the error
     if (error instanceof Error) {
-      if (error.message === 'Chat session not found') {
+      // RxDB-specific error handling
+      if (error.message.includes('not found') || error.message.includes('does not exist')) {
         return NextResponse.json({ error: 'Chat session not found' }, { status: 404 });
       }
 
-      if (error.message === 'Not authorized to delete this chat session') {
-        return NextResponse.json({ error: 'Not authorized to delete this chat session' }, { status: 403 });
-      }
-
-      if (error.message.includes('FOREIGN KEY constraint failed')) {
+      if (error.message.includes('constraint') || error.message.includes('foreign key')) {
         return NextResponse.json({
           error: 'Database constraint error: Could not delete the chat session',
           details: error.message
@@ -104,6 +71,9 @@ export async function DELETE(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

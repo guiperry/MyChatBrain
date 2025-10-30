@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-// Note: This route already uses direct SQL queries
+import { getRxDBHelper } from '@/db/rxdb';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
@@ -22,6 +21,9 @@ interface ChatSession {
 
 export async function GET(request: NextRequest) {
   try {
+    // Get RxDB helper
+    const rxdbHelper = await getRxDBHelper();
+
     // Get token from cookie
     const cookieStore = cookies();
     const token = cookieStore.get('gemini-auth-token')?.value;
@@ -40,37 +42,23 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch chat sessions
-    let userSessions: ChatSession[] = [];
-
-    if (userId) {
-      // If user is authenticated, fetch their sessions
-      userSessions = db.all(
-        'SELECT * FROM chat_sessions WHERE user_id = ? ORDER BY updated_at DESC',
-        [userId]
-      ) as ChatSession[];
-    } else {
-      // If not authenticated, fetch sessions without a userId (anonymous sessions)
-      userSessions = db.all(
-        'SELECT * FROM chat_sessions WHERE user_id IS NULL ORDER BY updated_at DESC'
-      ) as ChatSession[];
-    }
+    const userSessions = await rxdbHelper.getChatSessions(userId);
 
     // Fetch messages for these sessions
     const sessionIds = userSessions.map(session => session.id);
 
-    let allMessages: ChatMessage[] = [];
+    let allMessages: any[] = [];
     if (sessionIds.length > 0) {
-      // Convert array to comma-separated string for SQL IN clause
-      const sessionIdsStr = sessionIds.join(',');
-      allMessages = db.sqlite.prepare(
-        `SELECT * FROM chat_messages WHERE session_id IN (${sessionIdsStr}) ORDER BY id ASC`
-      ).all() as ChatMessage[];
+      // Get all messages for all sessions
+      const messagesPromises = sessionIds.map(sessionId => rxdbHelper.getChatMessages(sessionId));
+      const messagesArrays = await Promise.all(messagesPromises);
+      allMessages = messagesArrays.flat();
     }
 
     console.log(`Retrieved ${allMessages.length} messages for ${sessionIds.length} sessions`);
 
     // Group messages by session_id
-    const messagesBySession = allMessages.reduce<Record<number, ChatMessage[]>>(
+    const messagesBySession = allMessages.reduce<Record<number, any[]>>(
       (acc, msg) => {
         if (!acc[msg.session_id]) {
           acc[msg.session_id] = [];

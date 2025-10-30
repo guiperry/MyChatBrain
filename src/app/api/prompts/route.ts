@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { db } from '@/db';
+import { getRxDBHelper } from '@/db/rxdb';
 import { verifyToken } from '@/lib/auth';
 import { DecodedToken } from '@/types';
-import { typedAll, typedGet, typedRun } from '@/db/types';
-import { Prompt } from '@/db/types';
 
 // GET /api/prompts - Get all prompts for the current user
 export async function GET(request: NextRequest) {
   try {
+    // Get RxDB helper
+    const rxdbHelper = await getRxDBHelper();
+
     // Get token from cookie
     const cookieStore = cookies();
     const token = cookieStore.get('gemini-auth-token')?.value;
@@ -22,22 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch prompts
-    let prompts: Prompt[] = [];
-
-    if (userId) {
-      // If user is authenticated, fetch their prompts
-      prompts = typedAll<Prompt>(
-        db,
-        'SELECT * FROM prompts WHERE user_id = ? ORDER BY updated_at DESC',
-        [userId]
-      );
-    } else {
-      // If not authenticated, fetch prompts without a userId (anonymous prompts)
-      prompts = typedAll<Prompt>(
-        db,
-        'SELECT * FROM prompts WHERE user_id IS NULL ORDER BY updated_at DESC'
-      );
-    }
+    const prompts = await rxdbHelper.getPrompts(userId);
 
     return NextResponse.json({ prompts });
   } catch (error) {
@@ -49,6 +35,9 @@ export async function GET(request: NextRequest) {
 // POST /api/prompts - Create a new prompt
 export async function POST(request: NextRequest) {
   try {
+    // Get RxDB helper
+    const rxdbHelper = await getRxDBHelper();
+
     // Get token from cookie
     const cookieStore = cookies();
     const token = cookieStore.get('gemini-auth-token')?.value;
@@ -69,43 +58,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Content is required' }, { status: 400 });
     }
 
-    // Create a unique timestamp for this prompt
-    const timestamp = new Date().toISOString();
-
-    // Insert the prompt
-    let result;
-    if (userId !== null) {
-      // Insert with userId
-      typedRun(
-        db,
-        `INSERT INTO prompts (user_id, content, title, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?)`,
-        [userId, content, title || null, timestamp, timestamp]
-      );
-    } else {
-      // Insert without userId (it will be NULL)
-      typedRun(
-        db,
-        `INSERT INTO prompts (content, title, created_at, updated_at)
-         VALUES (?, ?, ?, ?)`,
-        [content, title || null, timestamp, timestamp]
-      );
-    }
-
-    // Get the last inserted ID
-    const lastIdResult = typedGet<{ id: number }>(db, 'SELECT last_insert_rowid() as id');
-    const promptId = lastIdResult ? lastIdResult.id : null;
-
-    if (!promptId) {
-      throw new Error('Failed to get last inserted ID');
-    }
-
-    // Get the newly created prompt
-    const prompt = typedGet<Prompt>(
-      db,
-      'SELECT * FROM prompts WHERE id = ?',
-      [promptId]
-    );
+    // Create the prompt
+    const prompt = await rxdbHelper.createPrompt({
+      content,
+      title: title || null,
+      user_id: userId
+    });
 
     return NextResponse.json({
       message: 'Prompt created successfully',

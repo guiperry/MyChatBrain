@@ -4,14 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run init && npm run seed && npm run check && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "migrate": "node --import tsx scripts/migrate.mjs",
+    "migrate-to-rxdb": "tsx scripts/migrate-to-rxdb.mjs",
     "check": "node scripts/check-db.mjs",
     "init": "node --import tsx scripts/init-db.js",
     "seed": "node --import tsx scripts/seed-db.js",
-    "compile": "tsc --project tsconfig.json --noEmitOnError"
+    "compile": "tsc --project tsconfig.json --noEmit"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -42,7 +43,9 @@
     "react-icons": "^5.5.0",
     "react-markdown": "^9.0.1",
     "react-syntax-highlighter": "^15.5.0",
-    "remark-gfm": "^4.0.0"
+    "remark-gfm": "^4.0.0",
+    "rxdb": "^16.20.0",
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

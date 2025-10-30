@@ -1,48 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { getRxDBHelper } from '@/db/rxdb';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
-import { Notes } from '@/db/schema';
 
 export async function GET(request: NextRequest) {
   console.log('Notes load API called');
   try {
+    // Get RxDB helper
+    const rxdbHelper = await getRxDBHelper();
+
     // Temporarily skip authentication for notes - treat all as anonymous
     console.log('Fetching all notes as anonymous');
 
     // Fetch notes
-    let userNotes: Notes[] = [];
+    let userNotes = [];
 
     try {
       // Fetch all notes (anonymous notes)
-      userNotes = db.all(
-        'SELECT * FROM notes WHERE user_id IS NULL ORDER BY updated_at DESC'
-      ) as Notes[];
-
-      // Check for and remove any duplicate notes (by ID)
-      // Use a Map to ensure we only have one note per ID
-      const notesMap = new Map<string, Notes>();
-
-      userNotes.forEach(note => {
-        // Make sure we have valid IDs
-        if (note.id === undefined) {
-          console.warn('Found note with undefined ID, skipping');
-          return;
-        }
-
-        const noteId = note.id.toString();
-
-        // Always use the most recently updated version of a note
-        if (!notesMap.has(noteId) ||
-            new Date(note.updated_at) > new Date(notesMap.get(noteId)!.updated_at)) {
-          notesMap.set(noteId, note);
-        }
-      });
-
-      // Convert the Map back to an array
-      userNotes = Array.from(notesMap.values());
-
-      console.log(`After deduplication: ${userNotes.length} unique notes`);
+      userNotes = await rxdbHelper.getNotes(null);
 
       console.log(`Found ${userNotes.length} notes`);
 

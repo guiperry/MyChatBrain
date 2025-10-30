@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { getRxDBHelper } from '@/db/rxdb';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
-import { DecodedToken, DbUser } from '@/types';
-import { typedGet } from '@/db/types';
+import { DecodedToken } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
+    // Get RxDB helper
+    const rxdbHelper = await getRxDBHelper();
+
     // Get token from cookie
     const cookieStore = cookies();
     const token = cookieStore.get('gemini-auth-token')?.value;
@@ -21,12 +23,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // Get user data
-    const user = typedGet<DbUser>(
-      db,
-      'SELECT * FROM users WHERE id = ?',
-      [decoded.userId]
-    );
+    // Get user data from RxDB
+    const user = await rxdbHelper.getUser(decoded.userId.toString());
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });

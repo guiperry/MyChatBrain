@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { db } from '@/db';
+import { getRxDBHelper } from '@/db/rxdb';
 import { verifyToken } from '@/lib/auth';
 import { DecodedToken } from '@/types';
-import { typedGet, typedRun } from '@/db/types';
-import { Prompt } from '@/db/types';
 
 // GET /api/prompts/[id] - Get a specific prompt
 export async function GET(
@@ -12,8 +10,11 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Get RxDB helper
+    const rxdbHelper = await getRxDBHelper();
+
     const promptId = parseInt(params.id);
-    if (isNaN(promptId)) {
+    if (isNaN(promptId) || promptId <= 0) {
       return NextResponse.json({ error: 'Invalid prompt ID' }, { status: 400 });
     }
 
@@ -30,11 +31,7 @@ export async function GET(
     }
 
     // Fetch the prompt
-    const prompt = typedGet<Prompt>(
-      db,
-      'SELECT * FROM prompts WHERE id = ?',
-      [promptId]
-    );
+    const prompt = await rxdbHelper.getPrompt(promptId);
 
     if (!prompt) {
       return NextResponse.json({ error: 'Prompt not found' }, { status: 404 });
@@ -48,7 +45,10 @@ export async function GET(
     return NextResponse.json({ prompt });
   } catch (error) {
     console.error('Error getting prompt:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Internal Server Error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 
@@ -58,8 +58,11 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Get RxDB helper
+    const rxdbHelper = await getRxDBHelper();
+
     const promptId = parseInt(params.id);
-    if (isNaN(promptId)) {
+    if (isNaN(promptId) || promptId <= 0) {
       return NextResponse.json({ error: 'Invalid prompt ID' }, { status: 400 });
     }
 
@@ -76,11 +79,7 @@ export async function PUT(
     }
 
     // Fetch the prompt to check ownership
-    const existingPrompt = typedGet<Prompt>(
-      db,
-      'SELECT * FROM prompts WHERE id = ?',
-      [promptId]
-    );
+    const existingPrompt = await rxdbHelper.getPrompt(promptId);
 
     if (!existingPrompt) {
       return NextResponse.json({ error: 'Prompt not found' }, { status: 404 });
@@ -96,26 +95,15 @@ export async function PUT(
     const { content, title } = body as { content: string; title?: string };
 
     // Validate input
-    if (!content) {
+    if (!content?.trim()) {
       return NextResponse.json({ error: 'Content is required' }, { status: 400 });
     }
 
     // Update the prompt
-    const timestamp = new Date().toISOString();
-    typedRun(
-      db,
-      `UPDATE prompts 
-       SET content = ?, title = ?, updated_at = ? 
-       WHERE id = ?`,
-      [content, title || null, timestamp, promptId]
-    );
-
-    // Get the updated prompt
-    const updatedPrompt = typedGet<Prompt>(
-      db,
-      'SELECT * FROM prompts WHERE id = ?',
-      [promptId]
-    );
+    const updatedPrompt = await rxdbHelper.updatePrompt(promptId, {
+      content: content.trim(),
+      title: title?.trim() || null
+    });
 
     return NextResponse.json({
       message: 'Prompt updated successfully',
@@ -123,7 +111,10 @@ export async function PUT(
     });
   } catch (error) {
     console.error('Error updating prompt:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Internal Server Error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 
@@ -133,8 +124,11 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Get RxDB helper
+    const rxdbHelper = await getRxDBHelper();
+
     const promptId = parseInt(params.id);
-    if (isNaN(promptId)) {
+    if (isNaN(promptId) || promptId <= 0) {
       return NextResponse.json({ error: 'Invalid prompt ID' }, { status: 400 });
     }
 
@@ -151,11 +145,7 @@ export async function DELETE(
     }
 
     // Fetch the prompt to check ownership
-    const existingPrompt = typedGet<Prompt>(
-      db,
-      'SELECT * FROM prompts WHERE id = ?',
-      [promptId]
-    );
+    const existingPrompt = await rxdbHelper.getPrompt(promptId);
 
     if (!existingPrompt) {
       return NextResponse.json({ error: 'Prompt not found' }, { status: 404 });
@@ -167,17 +157,16 @@ export async function DELETE(
     }
 
     // Delete the prompt
-    typedRun(
-      db,
-      'DELETE FROM prompts WHERE id = ?',
-      [promptId]
-    );
+    await rxdbHelper.deletePrompt(promptId);
 
     return NextResponse.json({
       message: 'Prompt deleted successfully'
     });
   } catch (error) {
     console.error('Error deleting prompt:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Internal Server Error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

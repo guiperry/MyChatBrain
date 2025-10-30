@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { getRxDBHelper } from '@/db/rxdb';
 import { verifyToken } from '@/lib/auth';
-import type { Notes } from '@/db/schema';
 import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   console.log('Notes save API called');
   try {
+    // Get RxDB helper
+    const rxdbHelper = await getRxDBHelper();
+
     // Temporarily skip authentication for notes - treat all as anonymous
     let userId: number | null = null;
     console.log('Saving as anonymous user');
@@ -39,13 +41,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const now = new Date().toISOString();
-
     // If noteId is provided, update existing note
     if (noteId) {
       console.log('Updating existing note with ID:', noteId);
-      // Check if the note exists (temporarily remove user check for debugging)
-      const existingNote = db.get('SELECT * FROM notes WHERE id = ?', [noteId]) as Notes | undefined;
+
+      // Check if the note exists
+      const existingNote = await rxdbHelper.getNote(noteId);
       console.log('Existing note found:', existingNote);
 
       if (!existingNote) {
@@ -59,20 +60,21 @@ export async function POST(request: NextRequest) {
       // Update the note
       console.log('Updating note in database');
       try {
-        console.log('Executing SQL update with params:', {
+        console.log('Executing update with params:', {
           title,
           contentLength: content.length,
-          now,
           noteId
         });
-        db.run(
-          'UPDATE notes SET title = ?, content = ?, updated_at = ? WHERE id = ?',
-          [title, content, now, noteId]
-        );
+
+        await rxdbHelper.updateNote(noteId, {
+          title,
+          content
+        });
+
         console.log('Note updated successfully');
 
         // Verify the update by fetching the note
-        const updatedNote = db.get('SELECT * FROM notes WHERE id = ?', [noteId]) as Notes;
+        const updatedNote = await rxdbHelper.getNote(noteId);
         console.log('Verified updated note:', {
           id: updatedNote?.id,
           title: updatedNote?.title,
@@ -94,27 +96,28 @@ export async function POST(request: NextRequest) {
     else {
       console.log('Creating new note');
       try {
-        console.log('Executing SQL insert with params:', {
+        console.log('Executing insert with params:', {
           userId,
           title,
-          contentLength: content.length,
-          now
+          contentLength: content.length
         });
-        const result = db.run(
-          'INSERT INTO notes (user_id, title, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-          [userId, title, content, now, now]
-        );
 
-        const newNoteId = result.lastInsertRowid;
+        const newNote = await rxdbHelper.createNote({
+          title,
+          content,
+          user_id: userId
+        });
+
+        const newNoteId = newNote.id;
         console.log('New note created with ID:', newNoteId);
 
         // Verify the insert by fetching the note
-        const newNote = db.get('SELECT * FROM notes WHERE id = ?', [newNoteId]) as Notes;
+        const verifiedNote = await rxdbHelper.getNote(newNoteId);
         console.log('Verified new note:', {
-          id: newNote?.id,
-          title: newNote?.title,
-          contentLength: newNote?.content?.length,
-          contentPreview: newNote?.content?.substring(0, 100)
+          id: verifiedNote?.id,
+          title: verifiedNote?.title,
+          contentLength: verifiedNote?.content?.length,
+          contentPreview: verifiedNote?.content?.substring(0, 100)
         });
 
         return NextResponse.json({

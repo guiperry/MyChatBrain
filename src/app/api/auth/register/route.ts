@@ -1,62 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { getRxDBHelper } from '@/db/rxdb';
 import { hashPassword, createToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
-import { DbUser } from '@/types';
-import { typedGet, typedRun } from '@/db/types';
 
 export async function POST(request: NextRequest) {
   try {
+    // Get RxDB helper
+    const rxdbHelper = await getRxDBHelper();
+
     const body = await request.json();
     const { username, email, password } = body as { username: string; email: string; password: string };
 
-    // Validate input
-    if (!username || !email || !password) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    // Validate input with comprehensive checks
+    if (!username?.trim()) {
+      return NextResponse.json({ error: 'Username is required' }, { status: 400 });
+    }
+    if (!email?.trim()) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+    if (!password?.trim()) {
+      return NextResponse.json({ error: 'Password is required' }, { status: 400 });
     }
 
-    // Check if username or email already exists
-    const existingUser = typedGet<DbUser>(
-      db,
-      'SELECT * FROM users WHERE username = ? OR email = ?',
-      [username, email]
-    );
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
 
-    if (existingUser) {
-      if (existingUser.username === username) {
-        return NextResponse.json({ error: 'Username already taken' }, { status: 400 });
-      }
-      if (existingUser.email === email) {
-        return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
-      }
+    // Validate password strength
+    if (password.length < 6) {
+      return NextResponse.json({ error: 'Password must be at least 6 characters long' }, { status: 400 });
+    }
+
+    // Check if username already exists
+    const existingUsername = await rxdbHelper.getUserByUsername(username.trim());
+    if (existingUsername) {
+      return NextResponse.json({ error: 'Username already taken' }, { status: 400 });
+    }
+
+    // Check if email already exists
+    const existingEmail = await rxdbHelper.getUserByEmail(email.trim().toLowerCase());
+    if (existingEmail) {
+      return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
     }
 
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create user
-    const timestamp = new Date().toISOString();
-
-    typedRun(
-      db,
-      `INSERT INTO users (username, email, password, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?)`,
-      [username, email, hashedPassword, timestamp, timestamp]
-    );
-
-    // Get the newly created user
-    const newUser = typedGet<DbUser>(
-      db,
-      'SELECT * FROM users WHERE username = ?',
-      [username]
-    );
+    // Create user with RxDB
+    const newUser = await rxdbHelper.createUser({
+      username: username.trim(),
+      email: email.trim().toLowerCase(),
+      password: hashedPassword
+    });
 
     if (!newUser) {
       return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
     }
 
-    // Create JWT token
-    const token = createToken(newUser.id);
+    // Create JWT token (convert string ID back to number for token)
+    const token = createToken(parseInt(newUser.id));
 
     // Set cookie
     const cookieStore = cookies();
@@ -73,13 +77,16 @@ export async function POST(request: NextRequest) {
     // Return user data (without password)
     return NextResponse.json({
       user: {
-        id: newUser.id,
+        id: parseInt(newUser.id),
         username: newUser.username,
         email: newUser.email,
       }
     }, { status: 201 });
   } catch (error) {
     console.error('Registration error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
