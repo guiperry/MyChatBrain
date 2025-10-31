@@ -15,6 +15,8 @@ interface NoteItem {
 interface RightSideBarProps {
   onOpenObsidian: () => void;
   onOpenMemory: () => void;
+  onClose?: () => void;
+  isOpen?: boolean;
   notes?: NoteItem[];
   onNoteSelect?: (note: NoteItem) => void;
   onNotesChange?: (notes: NoteItem[]) => void;
@@ -23,6 +25,8 @@ interface RightSideBarProps {
 const RightSideBar: React.FC<RightSideBarProps> = ({
   onOpenObsidian,
   onOpenMemory,
+  onClose = () => {},
+  isOpen = false,
   notes = [],
   onNoteSelect = () => {},
   onNotesChange = () => {}
@@ -95,9 +99,23 @@ const RightSideBar: React.FC<RightSideBarProps> = ({
   };
 
   return (
-    <div className={styles.rightSidebar}>
-      <div className={styles.notesSection}>
+    <div className={`${styles.rightSidebar} ${isOpen ? styles.open : ''}`}>
+      {/* Mobile header with close button */}
+      <div className={styles.mobileHeader}>
         <h3>Notes</h3>
+        <button
+          className={styles.mobileCloseButton}
+          onClick={onClose}
+          aria-label="Close sidebar"
+        >
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className={styles.notesSection}>
+        <div className={styles.desktopTitle}>
+          <h3>Notes</h3>
+        </div>
         <button
           className={styles.obsidianButton}
           onClick={onOpenObsidian}

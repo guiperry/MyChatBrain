@@ -6,7 +6,6 @@ import {
 } from "@google/generative-ai";
 import { Langfuse } from 'langfuse';
 import { indexGitHubRepo, extractGitHubURL, runRAGChain } from "./utils";
-import {} from "../components/GeminiBody";
 
 const langfuse = new Langfuse({
     publicKey: process.env.NEXT_PUBLIC_LANGFUSE_PUBLIC_KEY || "pk-lf-public-key",

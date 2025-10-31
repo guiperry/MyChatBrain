@@ -1,0 +1,29 @@
+{
+  "name": "favicon-fish",
+  "version": "1.0.0",
+  "description": "Independent favicon generator from mascot images. Generates ICO and PNG variants from any project's mascot image.",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "favicon-fish": "index.js"
+  },
+  "scripts": {
+    "generate": "node generate-favicon.js",
+    "test": "node test-favicon.js"
+  },
+  "keywords": [
+    "favicon",
+    "ico",
+    "image-processing",
+    "mascot",
+    "generator"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "sharp": "^0.33.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

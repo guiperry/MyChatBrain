@@ -1,29 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getRxDBHelper } from '@/db/rxdb';
+import { db } from '@/db';
 import { verifyToken } from '@/lib/auth';
-import { DecodedToken } from '@/types';
 
 // GET /api/prompts - Get all prompts for the current user
 export async function GET(request: NextRequest) {
   try {
-    // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
-
     // Get token from cookie
     const cookieStore = cookies();
     const token = cookieStore.get('gemini-auth-token')?.value;
 
     let userId: number | null = null;
     if (token) {
-      const decoded = verifyToken(token) as DecodedToken | null;
+      const decoded = verifyToken(token);
       if (decoded) {
         userId = decoded.userId;
       }
     }
 
     // Fetch prompts
-    const prompts = await rxdbHelper.getPrompts(userId);
+    let prompts: any[] = [];
+    if (userId) {
+      prompts = db.all('SELECT * FROM prompts WHERE user_id = ? OR user_id IS NULL ORDER BY updated_at DESC', [userId]);
+    } else {
+      prompts = db.all('SELECT * FROM prompts WHERE user_id IS NULL ORDER BY updated_at DESC');
+    }
 
     return NextResponse.json({ prompts });
   } catch (error) {
@@ -35,16 +36,13 @@ export async function GET(request: NextRequest) {
 // POST /api/prompts - Create a new prompt
 export async function POST(request: NextRequest) {
   try {
-    // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
-
     // Get token from cookie
     const cookieStore = cookies();
     const token = cookieStore.get('gemini-auth-token')?.value;
 
     let userId: number | null = null;
     if (token) {
-      const decoded = verifyToken(token) as DecodedToken | null;
+      const decoded = verifyToken(token);
       if (decoded) {
         userId = decoded.userId;
       }
@@ -59,11 +57,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the prompt
-    const prompt = await rxdbHelper.createPrompt({
-      content,
-      title: title || null,
-      user_id: userId
-    });
+    const timestamp = new Date().toISOString();
+    const result = db.run(
+      'INSERT INTO prompts (content, title, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      [content, title || null, userId, timestamp, timestamp]
+    );
+
+    if (!result.lastInsertRowid) {
+      return NextResponse.json({ error: 'Failed to create prompt' }, { status: 500 });
+    }
+
+    const promptId = result.lastInsertRowid;
+    const prompt = db.get('SELECT * FROM prompts WHERE id = ?', [promptId]);
 
     return NextResponse.json({
       message: 'Prompt created successfully',

@@ -1,5 +1,7 @@
 import { createRxDatabase } from 'rxdb';
 import { getRxStorageMemory } from 'rxdb/plugins/storage-memory';
+import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode';
+import { addRxPlugin } from 'rxdb';
 import {
   MyDatabase,
   MyDatabaseCollections,
@@ -12,6 +14,11 @@ import {
   memoryNodesSchema,
   memoryEdgesSchema
 } from './rxdb-schema';
+
+// Add dev mode plugin only in development
+if (process.env.NODE_ENV === 'development') {
+  addRxPlugin(RxDBDevModePlugin);
+}
 
 let dbPromise: Promise<MyDatabase> | null = null;
 

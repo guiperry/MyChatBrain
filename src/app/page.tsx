@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import LeftSidebar from '../components/LeftSidebar';
-import GeminiBody from '../components/GeminiBody';
+import ChatBody from '../components/ChatBody';
 import AIBody from '../components/AIBody';
 import RightSideBar from '../components/RightSideBar';
 import ObsidianPanel from '../components/ObsidianPanel';
@@ -84,6 +84,7 @@ export default function Home() {
   const [isMemoryPanelOpen, setIsMemoryPanelOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<'gemini' | 'modeldeployer'>('gemini');
   const [notes, setNotes] = useState<Array<{id: string; title: string; content: string; createdAt: Date}>>([]);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
 
   // Custom setNotes with logging
   const setNotesWithLogging = useCallback((newNotes: Array<{id: string; title: string; content: string; createdAt: Date}> | ((prevNotes: Array<{id: string; title: string; content: string; createdAt: Date}>) => Array<{id: string; title: string; content: string; createdAt: Date}>)) => {
@@ -181,15 +182,23 @@ export default function Home() {
 
     initialLoad();
 
+    // Listen for open-right-sidebar events
+    const handleOpenRightSidebar = () => {
+      setIsRightSidebarOpen(true);
+    };
+
+    window.addEventListener('open-right-sidebar', handleOpenRightSidebar);
+
     // Disable periodic refresh to avoid overriding manual state updates
     // const refreshInterval = setInterval(() => {
     //   console.log('Refreshing notes list');
     //   loadNotes();
     // }, 30000); // Refresh every 30 seconds
 
-    // return () => {
-    //   clearInterval(refreshInterval);
-    // };
+    return () => {
+      window.removeEventListener('open-right-sidebar', handleOpenRightSidebar);
+      // clearInterval(refreshInterval);
+    };
   }, []);
 
 
@@ -199,7 +208,7 @@ export default function Home() {
       <LeftSidebar />
       <div className={styles.mainContent}>
         {selectedModel === 'gemini' ? (
-          <GeminiBody currentModel={selectedModel} />
+          <ChatBody currentModel={selectedModel} />
         ) : (
           <AIBody />
         )}
@@ -212,6 +221,8 @@ export default function Home() {
         onOpenMemory={() => {
           setIsMemoryPanelOpen(true);
         }}
+        onClose={() => setIsRightSidebarOpen(false)}
+        isOpen={isRightSidebarOpen}
         notes={notes}
         onNoteSelect={async (note) => {
           console.log('Note selected:', {

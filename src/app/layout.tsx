@@ -111,7 +111,7 @@ const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
           }
         `}} />
       </head>
-      <body className={`${inter.className} light`}>
+      <body className={`${inter.className} light`} suppressHydrationWarning={true}>
         {/* Initial loading indicator that shows before JS loads */}
         <LoadingIndicator /> {/* Use the new component here */}
 

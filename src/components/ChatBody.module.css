@@ -63,6 +63,24 @@
   background-color: rgba(255, 255, 255, 0.05);
 }
 
+.notesButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background-color: var(--bgSecondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--softTextColor);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.notesButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
 .chatContainer {
   padding: 0 1.25rem;
   margin-bottom: 5rem;

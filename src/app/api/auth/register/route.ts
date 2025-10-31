@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { db } from '@/db';
 import { hashPassword, createToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import type { DbUser } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
-
     const body = await request.json();
     const { username, email, password } = body as { username: string; email: string; password: string };
 
@@ -34,13 +32,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if username already exists
-    const existingUsername = await rxdbHelper.getUserByUsername(username.trim());
+    const existingUsername = db.get('SELECT id FROM users WHERE username = ?', [username.trim()]) as { id: number } | null;
     if (existingUsername) {
       return NextResponse.json({ error: 'Username already taken' }, { status: 400 });
     }
 
     // Check if email already exists
-    const existingEmail = await rxdbHelper.getUserByEmail(email.trim().toLowerCase());
+    const existingEmail = db.get('SELECT id FROM users WHERE email = ?', [email.trim().toLowerCase()]) as { id: number } | null;
     if (existingEmail) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
     }
@@ -48,19 +46,21 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create user with RxDB
-    const newUser = await rxdbHelper.createUser({
-      username: username.trim(),
-      email: email.trim().toLowerCase(),
-      password: hashedPassword
-    });
+    // Create user
+    const timestamp = new Date().toISOString();
+    const result = db.run(
+      'INSERT INTO users (username, email, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      [username.trim(), email.trim().toLowerCase(), hashedPassword, timestamp, timestamp]
+    );
 
-    if (!newUser) {
+    if (!result.lastInsertRowid) {
       return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
     }
 
-    // Create JWT token (convert string ID back to number for token)
-    const token = createToken(parseInt(newUser.id));
+    const userId = result.lastInsertRowid as number;
+
+    // Create JWT token
+    const token = createToken(userId);
 
     // Set cookie
     const cookieStore = cookies();
@@ -77,9 +77,9 @@ export async function POST(request: NextRequest) {
     // Return user data (without password)
     return NextResponse.json({
       user: {
-        id: parseInt(newUser.id),
-        username: newUser.username,
-        email: newUser.email,
+        id: userId,
+        username: username.trim(),
+        email: email.trim().toLowerCase(),
       }
     }, { status: 201 });
   } catch (error) {

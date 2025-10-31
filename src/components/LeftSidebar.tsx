@@ -56,6 +56,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = () => {
   const [pineconeKey, setPineconeKey] = useState<string>("");
   const [pineconeEnvironment, setPineconeEnvironment] = useState<string>("");
   const [pineconeIndex, setPineconeIndex] = useState<string>("");
+  const [cloudflareBaseURL, setCloudflareBaseURL] = useState<string>("");
+  const [cloudflareModel, setCloudflareModel] = useState<string>("");
   const [showKeys, setShowKeys] = useState<boolean>(false);
 
   const toggleShowKeys = () => {
@@ -86,6 +88,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = () => {
     setPineconeKey(process.env.NEXT_PUBLIC_PINECONE_API_KEY || "");
     setPineconeEnvironment(process.env.NEXT_PUBLIC_PINECONE_ENVIRONMENT || "");
     setPineconeIndex(process.env.NEXT_PUBLIC_PINECONE_INDEX || "");
+    setCloudflareBaseURL(process.env.CLOUDFLARE_BASE_URL || "");
+    setCloudflareModel(process.env.CLOUDFLARE_MODEL || "");
 
     // Then try to fetch from database
     fetchSettings();
@@ -188,7 +192,9 @@ const LeftSidebar: React.FC<LeftSidebarProps> = () => {
           langfuseHost,
           pineconeKey,
           pineconeEnvironment,
-          pineconeIndex
+          pineconeIndex,
+          cloudflareBaseURL,
+          cloudflareModel
         })
       });
 
@@ -462,6 +468,22 @@ const LeftSidebar: React.FC<LeftSidebarProps> = () => {
               <Menu size={20} />
             </div>
             {isOpen && <h1 className={styles.sidebarTitle}>My-Chat-Brain AI</h1>}
+            {/* Mobile close button */}
+            <div
+              className={styles.mobileCloseButton}
+              onClick={() => setIsOpen(false)}
+              role="button"
+              tabIndex={0}
+              aria-label="Close sidebar"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setIsOpen(false);
+                }
+              }}
+            >
+              <X size={20} />
+            </div>
           </div>
 
           <div className={styles.sidebarSection}>
@@ -639,7 +661,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = () => {
                     className={styles.selectInput}
                   >
                     <option value="">Select a model</option>
-                    <option value="gemini-1.5-flash">gemini-1.5-flash (fastest)</option>
+                    <option value="gemini-pro">gemini-pro (legacy)</option>
                     <option value="gemini-1.5-pro">gemini-1.5-pro (most capable)</option>
                     <option value="gemini-pro">gemini-pro (legacy)</option>
                     <option value="gemini-1.5-pro-vision">gemini-1.5-pro-vision (for images)</option>
@@ -688,6 +710,16 @@ const LeftSidebar: React.FC<LeftSidebarProps> = () => {
                 <div className={styles.formGroup}>
                   <label htmlFor="pineconeIndex">Pinecone Index:</label>
                   <input type="text" id="pineconeIndex" value={maskString(pineconeIndex)} onChange={(e) => setPineconeIndex(e.target.value)} placeholder='gemini-clone'/>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="cloudflareBaseURL">Adeline Base URL:</label>
+                  <input type="text" id="cloudflareBaseURL" value={maskString(cloudflareBaseURL)} onChange={(e) => setCloudflareBaseURL(e.target.value)} placeholder='https://chat.knirv.com'/>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="cloudflareModel">Adeline Model:</label>
+                  <input type="text" id="cloudflareModel" value={maskString(cloudflareModel)} onChange={(e) => setCloudflareModel(e.target.value)} placeholder='@cf/openai/gpt-oss-120b'/>
                 </div>
 
                 <div className={styles.formActions}>

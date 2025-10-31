@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { db } from '@/db';
 import { comparePasswords, createToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import type { DbUser } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
-
     const body = await request.json();
     const { username, password } = body as { username: string; password: string };
 
@@ -17,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user by username
-    const user = await rxdbHelper.getUserByUsername(username);
+    const user = db.get('SELECT * FROM users WHERE username = ?', [username]) as DbUser | null;
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
@@ -29,8 +27,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
-    // Create JWT token (convert string ID back to number for token)
-    const token = createToken(parseInt(user.id));
+    // Create JWT token
+    const token = createToken(user.id);
 
     // Set cookie
     const cookieStore = cookies();
@@ -45,12 +43,9 @@ export async function POST(request: NextRequest) {
     });
 
     // Return user data (without password)
+    const { password: _, ...userWithoutPassword } = user;
     return NextResponse.json({
-      user: {
-        id: parseInt(user.id),
-        username: user.username,
-        email: user.email,
-      }
+      user: userWithoutPassword
     });
   } catch (error) {
     console.error('Login error:', error);

@@ -1,29 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { db } from '@/db';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
-interface ChatMessage {
-  id: number;
-  role: 'user' | 'bot';
-  timestamp: string;
-  session_id: number;  // This matches the database column name
-  content: string;
-}
-
-interface ChatSession {
-  id: number;
-  title: string;
-  created_at: string;  // This matches the database column name
-  updated_at: string;  // This matches the database column name
-  user_id: number | null;  // This matches the database column name
-}
-
 export async function GET(request: NextRequest) {
   try {
-    // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
-
     // Get token from cookie
     const cookieStore = cookies();
     const token = cookieStore.get('gemini-auth-token')?.value;
@@ -42,7 +23,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch chat sessions
-    const userSessions = await rxdbHelper.getChatSessions(userId);
+    let userSessions: any[] = [];
+    if (userId) {
+      userSessions = db.all('SELECT * FROM chat_sessions WHERE user_id = ? OR user_id IS NULL ORDER BY updated_at DESC', [userId]);
+    } else {
+      userSessions = db.all('SELECT * FROM chat_sessions ORDER BY updated_at DESC');
+    }
 
     // Fetch messages for these sessions
     const sessionIds = userSessions.map(session => session.id);
@@ -50,9 +36,8 @@ export async function GET(request: NextRequest) {
     let allMessages: any[] = [];
     if (sessionIds.length > 0) {
       // Get all messages for all sessions
-      const messagesPromises = sessionIds.map(sessionId => rxdbHelper.getChatMessages(sessionId));
-      const messagesArrays = await Promise.all(messagesPromises);
-      allMessages = messagesArrays.flat();
+      const placeholders = sessionIds.map(() => '?').join(',');
+      allMessages = db.all(`SELECT * FROM chat_messages WHERE session_id IN (${placeholders}) ORDER BY timestamp ASC`, sessionIds);
     }
 
     console.log(`Retrieved ${allMessages.length} messages for ${sessionIds.length} sessions`);

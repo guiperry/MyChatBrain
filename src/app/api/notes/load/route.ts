@@ -1,23 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { db } from '@/db';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   console.log('Notes load API called');
   try {
-    // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
+    // Get token from cookie
+    const cookieStore = cookies();
+    const token = cookieStore.get('gemini-auth-token')?.value;
 
-    // Temporarily skip authentication for notes - treat all as anonymous
-    console.log('Fetching all notes as anonymous');
+    let userId = null;
+    if (token) {
+      try {
+        const decoded = verifyToken(token);
+        if (decoded) {
+          userId = decoded.userId;
+        }
+      } catch (error) {
+        console.error('Token verification error:', error);
+        // Continue without userId
+      }
+    }
 
     // Fetch notes
-    let userNotes = [];
+    let userNotes: any[] = [];
 
     try {
-      // Fetch all notes (anonymous notes)
-      userNotes = await rxdbHelper.getNotes(null);
+      // Fetch notes for user or all notes if no user
+      if (userId) {
+        userNotes = db.all('SELECT * FROM notes WHERE user_id = ? ORDER BY updated_at DESC', [userId]);
+      } else {
+        userNotes = db.all('SELECT * FROM notes ORDER BY updated_at DESC');
+      }
 
       console.log(`Found ${userNotes.length} notes`);
 

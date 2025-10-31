@@ -13,7 +13,7 @@ import {
 } from "@phosphor-icons/react";
 import { User as UserIcon } from "@phosphor-icons/react/dist/ssr";
 import { Context } from "@/context/ContextProvider";
-import styles from "./GeminiBody.module.css";
+import styles from "./ChatBody.module.css";
 import { Settings as SettingsIcon } from "react-feather";
 import RightSideBar from "./RightSideBar";
 import rightSidebarStyles from "./RightSideBar.module.css";
@@ -24,17 +24,17 @@ import ChatLoadingIndicator from "./ChatLoadingIndicator";
 import SettingsPanel from "./SettingsPanel";
 import "./CustomStyles.css";
 
-interface GeminiBodyProps {
+interface ChatBodyProps {
   currentModel?: 'gemini' | 'modeldeployer';
 }
 
-const MODEL_NAME = process.env.NEXT_PUBLIC_MODEL_NAME || "gemini-1.5-flash";
+const MODEL_NAME = process.env.NEXT_PUBLIC_MODEL_NAME || "@cf/openai/gpt-oss-120b";
 
-interface GeminiResponse {
+interface ChatResponse {
   response: string;
 }
 
-const GeminiBody: React.FC<GeminiBodyProps> = ({ currentModel: externalModel }) => {
+const ChatBody: React.FC<ChatBodyProps> = ({ currentModel: externalModel }) => {
   const chatMessagesEndRef = useRef<HTMLDivElement>(null);
   const {
     submit,
@@ -215,32 +215,31 @@ const GeminiBody: React.FC<GeminiBodyProps> = ({ currentModel: externalModel }) 
     };
   }, []);
 
-  // Helper function to get Gemini response
-  const getGeminiResponse = async (prompt: string): Promise<string> => {
+  // Helper function to get chat response from chat.knirv.com
+  const getChatResponse = async (prompt: string): Promise<string> => {
     try {
-      const geminiResponse: Response = await fetch('/api/gemini', {
+      const chatResponse: Response = await fetch('/api/chat', {
         method: "POST",
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ prompt: prompt })
+        body: JSON.stringify({ message: prompt })
       });
 
-      const geminiJson: GeminiResponse = await geminiResponse.json();
+      const chatJson: ChatResponse = await chatResponse.json();
 
       // Even if the response is not OK, we'll use the response message
       // which contains helpful instructions for the user
-      return geminiJson.response;
+      return chatJson.response;
     } catch (error) {
-      console.error("Error in getGeminiResponse:", error);
+      console.error("Error in getChatResponse:", error);
       return `
 # Connection Error
 
-There was a problem connecting to the Gemini API. Please check:
+There was a problem connecting to the chat service at chat.knirv.com. Please check:
 
 1. Your internet connection
-2. That your API key is correctly set in the settings
-3. That the Gemini API service is available
+2. That the chat service is available
 
 Try refreshing the page or updating your settings.
       `;
@@ -284,8 +283,8 @@ Try refreshing the page or updating your settings.
     setDisplayResult(true);
 
     try {
-      // Get response from Gemini
-      const geminiResponse = await getGeminiResponse(prompt);
+      // Get response from chat service
+      const chatResponse = await getChatResponse(prompt);
 
       // Log the current chat ID and session creation flag
       console.log("Before updating chat history:", {
@@ -308,11 +307,11 @@ Try refreshing the page or updating your settings.
       setChatHistory((prev) => [
         ...prev,
         { text: prompt, type: 'user' },
-        { text: geminiResponse, type: 'bot' }
+        { text: chatResponse, type: 'bot' }
       ]);
 
-      setResult(geminiResponse);
-      setFormattedResult(geminiResponse);
+      setResult(chatResponse);
+      setFormattedResult(chatResponse);
 
       // Log after updating
       console.log("After updating chat history:", {
@@ -389,14 +388,18 @@ useEffect(() => {
         <div className={styles.header}>
         <h1 className={styles.headerTitle}>My-Chat-Brain</h1>
         <div className={styles.headerActions}>
-          <select
-            value={currentModel}
-            onChange={(e) => handleModelChange(e.target.value as 'gemini' | 'modeldeployer')}
-            className={modelSelectStyles.modelSelect}
+          <button
+            className={styles.notesButton}
+            onClick={() => {
+              // Dispatch event to open right sidebar
+              const event = new CustomEvent('open-right-sidebar');
+              window.dispatchEvent(event);
+            }}
+            aria-label="Open notes"
+            title="Open notes"
           >
-            <option value="gemini">Gemini (Free)</option>
-            <option value="modeldeployer">ModelDeployer (Pro)</option>
-          </select>
+            <Note size={20} />
+          </button>
           <div
             className={styles.userProfile}
             onClick={() => setSettingsPanelOpen(true)}
@@ -414,6 +417,9 @@ useEffect(() => {
             <Warning size={24} />
             <p>
               API key not configured. Please set your Gemini API key in the settings.
+            </p>
+            <p style={{ fontSize: '14px', marginTop: '8px', color: '#666' }}>
+              Note: Chat is currently using the default cloudflare service at chat.knirv.com
             </p>
           </div>
         )}
@@ -577,12 +583,6 @@ useEffect(() => {
       </form>
 
       <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <RightSideBar
-        onOpenObsidian={toggleObsidianPanel}
-        onOpenMemory={toggleMemoryPanel}
-        notes={notes}
-        onNoteSelect={handleNoteSelect}
-      />
       <ObsidianPanel
         isOpen={obsidianOpen}
         onClose={() => setObsidianOpen(false)}
@@ -602,4 +602,4 @@ useEffect(() => {
   );
 };
 
-export default GeminiBody;
+export default ChatBody;

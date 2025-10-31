@@ -4,7 +4,7 @@ import adelineInference from '@/lib/adeline';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { prompt, model = 'gemini-1.5-flash', options = {} } = body;
+    const { prompt, model = 'gemini-pro', options = {} } = body;
 
     // Check if any provider is configured
     const availableProviders = adelineInference.getAvailableProviders();
@@ -47,7 +47,7 @@ After adding your API keys, you can start using the chat!
     // Validate model is supported
     const availableModels = adelineInference.getAvailableModels();
     if (!availableModels.includes(model)) {
-      console.warn(`Model "${model}" not supported, defaulting to gemini-1.5-flash`);
+      console.warn(`Model "${model}" not supported, defaulting to gemini-1.5-pro`);
     }
 
     console.log(`Using model: ${model}`);

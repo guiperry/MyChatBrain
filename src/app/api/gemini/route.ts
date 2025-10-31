@@ -44,14 +44,14 @@ After adding your API keys, you can start using the chat!
       });
     }
 
-    // Determine model to use
-    let modelToUse = model || process.env.NEXT_PUBLIC_MODEL_NAME || 'gemini-1.5-flash';
+    // Determine model to use - default to Adeline model if no model specified
+    let modelToUse = model || process.env.CLOUDFLARE_MODEL || '@cf/openai/gpt-oss-120b';
 
     // Validate model is supported
     const availableModels = adelineInference.getAvailableModels();
     if (!availableModels.includes(modelToUse)) {
-      console.warn(`Model "${modelToUse}" not supported, defaulting to gemini-1.5-flash`);
-      modelToUse = 'gemini-1.5-flash';
+      console.warn(`Model "${modelToUse}" not supported, defaulting to @cf/openai/gpt-oss-120b`);
+      modelToUse = '@cf/openai/gpt-oss-120b';
     }
 
     console.log(`Using model: ${modelToUse}`);

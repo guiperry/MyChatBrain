@@ -1,20 +1,35 @@
+/* Mobile-first approach */
 .container {
   display: flex;
+  flex-direction: column;
   width: 100%;
   min-height: 100vh;
   position: relative;
 }
 
+/* Main content area - full width on mobile, adjusted for sidebars on larger screens */
 .mainContent {
   flex: 1;
-  margin-left: 60px; /* Width of collapsed sidebar */
-  transition: margin-left 0.3s ease-in-out;
-  width: calc(100% - 60px);
+  width: 100%;
   min-height: 100vh;
   position: relative;
-  z-index: 20; /* Higher than sidebar to ensure content is visible */
+  z-index: 20;
   display: flex;
-  justify-content: center; /* Center the content horizontally */
+  justify-content: center;
+  order: 2; /* Place main content in middle on mobile */
+}
+
+/* Desktop layout adjustments */
+@media (min-width: 769px) {
+  .container {
+    flex-direction: row;
+  }
+
+  .mainContent {
+    margin-left: 60px; /* Width of collapsed sidebar */
+    width: calc(100% - 310px); /* Account for both sidebars: 60px left + 250px right */
+    order: unset;
+  }
 }
 
 /* Not Found Page Styles */
@@ -58,19 +73,4 @@
 
 .backButton:hover {
   background-color: var(--primary-hover, #7c3aed);
-}
-
-/* Media query for responsive design */
-@media (max-width: 768px) {
-  .mainContent {
-    margin-left: 60px;
-    width: calc(100% - 60px);
-  }
-}
-
-@media (max-width: 480px) {
-  .mainContent {
-    margin-left: 0;
-    width: 100%;
-  }
 }

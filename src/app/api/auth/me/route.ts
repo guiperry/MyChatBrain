@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { db } from '@/db';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
-import { DecodedToken } from '@/types';
+import type { DbUser } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
-
     // Get token from cookie
     const cookieStore = cookies();
     const token = cookieStore.get('gemini-auth-token')?.value;
@@ -18,25 +15,22 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify token
-    const decoded = verifyToken(token) as DecodedToken | null;
+    const decoded = verifyToken(token);
     if (!decoded) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // Get user data from RxDB
-    const user = await rxdbHelper.getUser(decoded.userId.toString());
+    // Get user data from database
+    const user = db.get('SELECT * FROM users WHERE id = ?', [decoded.userId]) as DbUser | null;
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Return user data (without password)
+    const { password: _, ...userWithoutPassword } = user;
     return NextResponse.json({
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-      }
+      user: userWithoutPassword
     });
   } catch (error) {
     console.error('Get user error:', error);

@@ -25,18 +25,18 @@ export default function TestPage() {
           throw new Error(`Database error: ${statusData.database.error}`);
         }
 
-        setStatus('Database status checked. Running migration...');
+        setStatus('Database status checked. Initializing RxDB...');
 
-        // Next, try to run the database migration
-        const migrationResponse = await fetch('/api/updateSchema');
-        if (!migrationResponse.ok) {
-          throw new Error(`Migration failed: ${migrationResponse.statusText}`);
+        // Next, initialize RxDB
+        const initResponse = await fetch('/api/updateSchema');
+        if (!initResponse.ok) {
+          throw new Error(`RxDB initialization failed: ${initResponse.statusText}`);
         }
-        
-        const migrationData = await migrationResponse.json();
-        console.log('Migration result:', migrationData);
-        
-        setStatus('Database schema updated. Testing session creation...');
+
+        const initData = await initResponse.json();
+        console.log('RxDB initialization result:', initData);
+
+        setStatus('RxDB initialized. Testing session creation...');
         
         // Try to create a test session
         const sessionResponse = await fetch('/api/createSession', {
@@ -85,7 +85,7 @@ export default function TestPage() {
         setStatus('All tests passed successfully!');
         setDbInfo({
           status: statusData,
-          migration: migrationData,
+          init: initData,
           session: sessionData,
           messages: messagesData
         });

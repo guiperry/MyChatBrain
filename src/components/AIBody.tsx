@@ -13,7 +13,7 @@ import {
 } from "@phosphor-icons/react";
 import { User as UserIcon } from "@phosphor-icons/react/dist/ssr";
 import { Context } from "@/context/ContextProvider";
-import styles from "./GeminiBody.module.css";
+import styles from "./ChatBody.module.css";
 import rightSidebarStyles from "./RightSideBar.module.css";
 import modelSelectStyles from "./ModelSelect.module.css";
 import { Settings as SettingsIcon } from "react-feather";

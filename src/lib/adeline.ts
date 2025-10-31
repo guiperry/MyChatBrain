@@ -21,6 +21,12 @@ interface ProviderConfig {
 
 // Available providers configuration
 const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
+  adeline: {
+    name: 'adeline',
+    apiKey: '', // No API key needed for chat.knirv.com
+    baseURL: process.env.CLOUDFLARE_BASE_URL || 'https://chat.knirv.com',
+    models: ['@cf/openai/gpt-oss-120b'] // Default model from env
+  },
   google: {
     name: 'google',
     apiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
@@ -39,13 +45,14 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
 };
 
 // Default model configuration
-const DEFAULT_MODEL = 'gemini-1.5-flash';
-const DEFAULT_PROVIDER = 'google';
+const DEFAULT_MODEL = process.env.CLOUDFLARE_MODEL || '@cf/openai/gpt-oss-120b';
+const DEFAULT_PROVIDER = 'adeline';
 
 // Model mapping for backward compatibility
 const MODEL_MAPPING: Record<string, { provider: string; model: string }> = {
-  'gemini-1.5-pro': { provider: 'google', model: 'gemini-1.5-pro' },
-  'gemini-1.5-flash': { provider: 'google', model: 'gemini-1.5-flash' },
+  'gemini-1.5-pro': { provider: 'google', model: 'gemini-pro' },
+  'gemini-1.5-flash': { provider: 'google', model: 'gemini-pro' },
+  'gemini-1.5-flash-latest': { provider: 'google', model: 'gemini-pro' },
   'gemini-pro': { provider: 'google', model: 'gemini-pro' },
   'gpt-4': { provider: 'openai', model: 'gpt-4' },
   'gpt-4-turbo': { provider: 'openai', model: 'gpt-4-turbo' },
@@ -190,6 +197,13 @@ class AdelineInference {
 
     try {
       const { provider, model, config } = this.getModelConfig(options.model);
+
+      // Handle Adeline provider (chat.knirv.com) directly
+      if (provider === 'adeline') {
+        return await this.runAdelineInference(prompt, options, config);
+      }
+
+      // Handle other providers through Adaline Gateway
       const modelInstance = await this.createModel(provider, model);
 
       // Check for GitHub URL processing (from original gemini.ts)
@@ -262,6 +276,43 @@ class AdelineInference {
   }
 
   /**
+   * Handle inference for Adeline provider (chat.knirv.com)
+   */
+  private async runAdelineInference(prompt: string, options: InferenceOptions, config: ProviderConfig): Promise<InferenceResult> {
+    const startTime = Date.now();
+
+    try {
+      // For now, provide a mock response since the endpoint may not be fully set up
+      // TODO: Replace with actual API call when chat.knirv.com is ready
+      console.log(`Adeline inference called with prompt: "${prompt.substring(0, 100)}..."`);
+
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const latency = Date.now() - startTime;
+
+      // Mock response - replace with actual API call
+      const responseText = `Hello! I received your message: "${prompt}". This is a mock response from the Adeline system. The chat.knirv.com endpoint integration is in progress.`;
+
+      return {
+        response: responseText,
+        usage: {
+          promptTokens: Math.ceil(prompt.length / 4),
+          completionTokens: Math.ceil(responseText.length / 4),
+          totalTokens: Math.ceil((prompt.length + responseText.length) / 4)
+        },
+        latency,
+        provider: 'adeline',
+        model: config.models[0]
+      };
+
+    } catch (error) {
+      console.error("Adeline direct inference error:", error);
+      throw new Error(`Adeline inference failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
    * Get available models
    */
   getAvailableModels(): string[] {
@@ -280,6 +331,10 @@ class AdelineInference {
    */
   isProviderConfigured(provider: string): boolean {
     const config = PROVIDER_CONFIGS[provider];
+    // Adeline provider doesn't require API key
+    if (provider === 'adeline') {
+      return !!config && !!config.baseURL;
+    }
     return config && !!config.apiKey;
   }
 }

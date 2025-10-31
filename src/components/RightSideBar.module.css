@@ -1,5 +1,6 @@
+/* Mobile-first approach for RightSideBar */
 .rightSidebar {
-  width: 250px;
+  width: 100%; /* Full width on mobile */
   background-color: var(--bgSecondary);
   border-left: 1px solid rgba(255, 255, 255, 0.1);
   padding: 1.25rem;
@@ -7,10 +8,20 @@
   right: 0;
   top: 0;
   bottom: 0;
-  z-index: 0;
+  z-index: 40; /* Lower than left sidebar */
   display: flex;
   flex-direction: column;
   overflow-y: hidden;
+  transform: translateX(100%); /* Hidden by default on mobile */
+}
+
+/* Desktop behavior */
+@media (min-width: 769px) {
+  .rightSidebar {
+    width: 250px;
+    transform: translateX(0); /* Always visible on desktop */
+    z-index: 0;
+  }
 }
 
 .settingsSection, .modelSection {
@@ -75,15 +86,71 @@
   color: var(--softTextColor);
 }
 
-/* Responsive adjustments */
-@media (max-width: 1024px) {
-  .rightSidebar {
-    width: 200px;
+/* Mobile header */
+.mobileHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 1rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1rem;
+}
+
+.mobileHeader h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--softTextColor);
+}
+
+.mobileCloseButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--softTextColor);
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  opacity: 0.7;
+}
+
+.mobileCloseButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  opacity: 1;
+}
+
+/* Desktop title - hidden on mobile */
+.desktopTitle {
+  display: block;
+}
+
+.notesSection h3 {
+  display: block;
+}
+
+/* Hide mobile header on desktop */
+@media (min-width: 769px) {
+  .mobileHeader {
+    display: none;
   }
 }
 
+/* Open state for mobile */
+.open {
+  transform: translateX(0) !important; /* Override the default transform when open */
+}
+
+/* Mobile-specific responsive adjustments */
 @media (max-width: 768px) {
   .rightSidebar {
+    transform: translateX(100%); /* Hidden by default on mobile */
+  }
+
+  .desktopTitle {
     display: none;
   }
 }
