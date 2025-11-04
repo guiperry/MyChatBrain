@@ -23,38 +23,29 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Get RxDB helper instance
+    const rxdbHelper = await db();
+
     // Fetch notes
-    let userNotes: any[] = [];
+    const notes = await rxdbHelper.getNotes(userId);
 
-    try {
-      // Fetch notes for user or all notes if no user
-      if (userId) {
-        userNotes = db.all('SELECT * FROM notes WHERE user_id = ? ORDER BY updated_at DESC', [userId]);
-      } else {
-        userNotes = db.all('SELECT * FROM notes ORDER BY updated_at DESC');
-      }
+    console.log(`Found ${notes.length} notes`);
 
-      console.log(`Found ${userNotes.length} notes`);
-
-      // For debugging, log the first few notes with content details
-      if (userNotes.length > 0) {
-        console.log('Sample notes:', userNotes.slice(0, 2).map(note => ({
-          id: note.id,
-          title: note.title,
-          contentLength: note.content?.length,
-          contentPreview: note.content?.substring(0, 100),
-          created_at: note.created_at,
-          updated_at: note.updated_at
-        })));
-      }
-    } catch (dbError) {
-      console.error('Database error fetching notes:', dbError);
-      throw dbError;
+    // For debugging, log the first few notes with content details
+    if (notes.length > 0) {
+      console.log('Sample notes:', notes.slice(0, 2).map(note => ({
+        id: note.id,
+        title: note.title,
+        contentLength: note.content?.length,
+        contentPreview: note.content?.substring(0, 100),
+        created_at: note.created_at,
+        updated_at: note.updated_at
+      })));
     }
 
     return NextResponse.json({
       success: true,
-      notes: userNotes
+      notes: notes.map(n => n.toJSON())
     });
   } catch (error: any) {
     console.error('Error loading notes:', error);

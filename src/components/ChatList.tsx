@@ -2,23 +2,8 @@ import React, { useContext, useState, useEffect } from "react";
 import { Context } from "@/context/ContextProvider";
 import { ChatCircle, Trash } from "@phosphor-icons/react";
 import styles from './ChatList.module.css';
-
-interface ChatSession {
-  id: number;
-  title: string;
-  created_at: string;
-  updated_at: string;
-  user_id: number | null;
-  messages: ChatMessage[];
-}
-
-interface ChatMessage {
-  id: number;
-  session_id: number;
-  content: string;
-  role: 'user' | 'bot';
-  timestamp: string;
-}
+import { ChatSession, ChatMessage } from '@/types';
+import { chatMessagesToHistoryItems } from '@/lib/dataTransformers';
 
 const ChatList: React.FC = () => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -92,8 +77,9 @@ const ChatList: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`/api/deleteChat?sessionId=${sessionId}`, {
+      const response = await fetch(`/api/chat/${sessionId}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
 
       if (response.status === 401) {
@@ -141,10 +127,7 @@ const ChatList: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Convert the messages to the format expected by the chat history
-      const formattedMessages = messages.map(msg => ({
-        text: msg.content || '',
-        type: msg.role === 'user' || msg.role === 'bot' ? msg.role : 'user'
-      }));
+      const formattedMessages = chatMessagesToHistoryItems(messages);
 
       console.log('Formatted messages:', formattedMessages.length);
 

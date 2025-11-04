@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useState, useRef, Dispatch, SetStateAction, useEffect } from "react";
+import { ChatHistoryItem } from "@/types";
 
 interface ContextProps {
   theme: "light" | "dark";
@@ -10,8 +11,8 @@ interface ContextProps {
   result: string;
   loading: boolean;
   displayResult: boolean;
-  chatHistory: { text: string, type: "user" | "bot" }[];
-  setChatHistory: Dispatch<SetStateAction<{ text: string, type: "user" | "bot" }[]>>;
+  chatHistory: ChatHistoryItem[];
+  setChatHistory: Dispatch<SetStateAction<ChatHistoryItem[]>>;
   recentPrompts: string;
   setRecentPrompts: Dispatch<SetStateAction<string>>;
   setPrevPrompts: React.Dispatch<React.SetStateAction<string[]>>;
@@ -45,7 +46,7 @@ export const ContextProvider: React.FC<ProviderProps> = ({ children }: ProviderP
   const [loading, setLoading] = useState<boolean>(false);
   const [recentPrompts, setRecentPrompts] = useState<string>("");
   const [displayResult, setDisplayResult] = useState<boolean>(false);
-  const [chatHistory, setChatHistory] = useState<{ text: string, type: "user" | "bot" }[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
   const tokenCountRef = useRef<number>(0);
   const [prevPrompts, setPrevPrompts] = useState<string[]>([]);
   const [theme, setTheme] = useState<"light" | "dark">("light");

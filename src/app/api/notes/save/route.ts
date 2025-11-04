@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
           user_id: userId
         });
 
-        const newNoteId = newNote.id;
+        const newNoteId = newNote.id.toString();
         console.log('New note created with ID:', newNoteId);
 
         // Verify the insert by fetching the note

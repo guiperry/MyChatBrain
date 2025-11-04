@@ -15,6 +15,7 @@ interface NoteItem {
 interface RightSideBarProps {
   onOpenObsidian: () => void;
   onOpenMemory: () => void;
+  onOpenPersonaAnalytics?: () => void;
   onClose?: () => void;
   isOpen?: boolean;
   notes?: NoteItem[];
@@ -25,12 +26,15 @@ interface RightSideBarProps {
 const RightSideBar: React.FC<RightSideBarProps> = ({
   onOpenObsidian,
   onOpenMemory,
+  onOpenPersonaAnalytics = () => {},
   onClose = () => {},
   isOpen = false,
   notes = [],
   onNoteSelect = () => {},
   onNotesChange = () => {}
 }) => {
+  console.log('RightSideBar rendering, isOpen:', isOpen);
+
   // Log notes received from parent
   useEffect(() => {
     console.log('RightSideBar received notes:', notes.length, 'notes');
@@ -118,7 +122,10 @@ const RightSideBar: React.FC<RightSideBarProps> = ({
         </div>
         <button
           className={styles.obsidianButton}
-          onClick={onOpenObsidian}
+          onClick={() => {
+            console.log('New Note button clicked');
+            onOpenObsidian();
+          }}
           aria-label="Create new note"
         >
           <span className={styles.buttonIcon}>📝</span>
@@ -127,12 +134,28 @@ const RightSideBar: React.FC<RightSideBarProps> = ({
 
         <button
           className={styles.obsidianButton}
-          onClick={onOpenMemory}
+          onClick={() => {
+            console.log('Memory Graph button clicked');
+            onOpenMemory();
+          }}
           aria-label="Open memory visualization"
           style={{ marginTop: '8px' }}
         >
           <span className={styles.buttonIcon}><Brain size={16} /></span>
           <span className={styles.buttonText}>Memory Graph</span>
+        </button>
+
+        <button
+          className={styles.obsidianButton}
+          onClick={() => {
+            console.log('Persona Analytics button clicked');
+            onOpenPersonaAnalytics();
+          }}
+          aria-label="Open persona analytics"
+          style={{ marginTop: '8px' }}
+        >
+          <span className={styles.buttonIcon}>📊</span>
+          <span className={styles.buttonText}>Persona Analytics</span>
         </button>
 
         {notes.length > 0 ? (

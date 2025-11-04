@@ -4,7 +4,7 @@ export default function Head() {
       <title>My-Chat-Brain AI</title>
       <meta content="width=device-width, initial-scale=1" name="viewport" />
       <meta name="description" content="An AI powered conversational assistant" />
-      <link rel="icon" href="public/favicon.ico" />
+      <link rel="icon" href="favicon.ico" />
 
       {/* Unified initialization and error handling */}
       <script

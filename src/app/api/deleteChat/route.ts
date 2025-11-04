@@ -4,6 +4,12 @@ import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { DecodedToken } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
+  return NextResponse.json({ message: 'deleteChat endpoint is working' });
+}
+
 export async function DELETE(request: NextRequest) {
   try {
     // Get RxDB helper

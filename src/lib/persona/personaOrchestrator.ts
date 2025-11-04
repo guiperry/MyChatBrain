@@ -17,19 +17,27 @@ export interface PersonaSnapshot {
     polarity: number;
     score: number;
     modelVersion: string;
+    averagePolarity?: number;
+    averageScore?: number;
+    totalSamples?: number;
+    updatedAt?: string;
   };
   interests?: Array<{
     topic: string;
     weight: number;
+    lastUpdated?: string;
   }>;
   goals?: Array<{
     description: string;
     status: 'active' | 'completed' | 'cancelled';
     confidence: number;
+    updatedAt?: string;
   }>;
   personality?: Array<{
     trait: string;
     percentile: number;
+    evidenceCount?: number;
+    updatedAt?: string;
   }>;
   recentErrors?: Array<{
     type: string;
@@ -44,6 +52,9 @@ export interface PersonaSnapshot {
   ideas?: Array<{
     title: string;
     status: 'draft' | 'refined' | 'implemented';
+    updatedAt?: string;
+    createdAt?: string;
+    tags?: string[];
   }>;
   lastUpdated: string;
 }
@@ -57,19 +68,9 @@ export class PersonaOrchestrator {
    */
   static async initializeUser(userId: number): Promise<boolean> {
     try {
-      // Check if persona user already exists
-      const existing = db.get(
-        'SELECT id FROM persona_users WHERE user_id = ?',
-        [userId]
-      );
-
-      if (!existing) {
-        db.run(
-          'INSERT INTO persona_users (user_id) VALUES (?)',
-          [userId]
-        );
-      }
-
+      // TODO: Add persona_users table to RxDB schema
+      // For now, persona initialization is skipped
+      console.log(`Persona initialization for user ${userId} - tables not yet migrated to RxDB`);
       return true;
     } catch (error) {
       console.error('Error initializing user persona:', error);
@@ -82,12 +83,9 @@ export class PersonaOrchestrator {
    */
   static async startSession(userId: number, channel: string = 'web', context?: string): Promise<number | null> {
     try {
-      const insertResult = db.run(
-        'INSERT INTO persona_sessions (user_id, channel, context) VALUES (?, ?, ?)',
-        [userId, channel, context]
-      );
-
-      return insertResult.lastInsertRowid as number;
+      // TODO: Add persona_sessions table to RxDB schema
+      console.log(`Persona session start for user ${userId} - tables not yet migrated to RxDB`);
+      return Date.now(); // Return a temporary session ID
     } catch (error) {
       console.error('Error starting persona session:', error);
       return null;
@@ -104,13 +102,9 @@ export class PersonaOrchestrator {
     text: string
   ): Promise<number | null> {
     try {
-      const insertResult = db.run(
-        `INSERT INTO persona_messages (session_id, message_id, role, text, timestamp)
-         VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-        [sessionId, messageId, role, text]
-      );
-
-      return insertResult.lastInsertRowid as number;
+      // TODO: Add persona_messages table to RxDB schema
+      console.log(`Recording persona message for session ${sessionId} - tables not yet migrated to RxDB`);
+      return Date.now(); // Return a temporary message ID
     } catch (error) {
       console.error('Error recording persona message:', error);
       return null;
@@ -200,27 +194,47 @@ export class PersonaOrchestrator {
         personality,
         recentErrors,
         toolUsage,
-        ideas
+        ideas,
+        sentiment
       ] = await Promise.all([
         InterestProfiler.getTopInterests(userId, 5),
         GoalTracker.getActiveGoals(userId),
         PersonalityModeler.getDominantTraits(userId, 5),
         this.getRecentErrors(userId, 5),
         this.getRecentToolUsage(userId, 5),
-        IdeaNotetaker.getUserIdeas(userId)
+        IdeaNotetaker.getUserIdeas(userId),
+        this.getSentimentSummary(userId)
       ]);
 
       return {
         userId,
-        interests: interests.map(i => ({ topic: i.topic, weight: i.weight })),
+        sentiment: sentiment
+          ? {
+              polarity: sentiment.polarity,
+              score: sentiment.score,
+              modelVersion: sentiment.modelVersion,
+              averagePolarity: sentiment.averagePolarity,
+              averageScore: sentiment.averageScore,
+              totalSamples: sentiment.totalSamples,
+              updatedAt: sentiment.updatedAt
+            }
+          : undefined,
+        interests: interests.map(i => ({
+          topic: i.topic,
+          weight: i.weight,
+          lastUpdated: i.last_updated
+        })),
         goals: goals.map(g => ({
           description: g.description,
           status: g.status,
-          confidence: g.confidence
+          confidence: g.confidence,
+          updatedAt: g.updated_at
         })),
         personality: personality.map(p => ({
           trait: p.trait_label,
-          percentile: p.percentile
+          percentile: p.percentile,
+          evidenceCount: p.evidence_count,
+          updatedAt: p.last_updated
         })),
         recentErrors: recentErrors.map(e => ({
           type: e.type,
@@ -234,7 +248,10 @@ export class PersonaOrchestrator {
         })),
         ideas: ideas.slice(0, 5).map(i => ({
           title: i.title,
-          status: i.status
+          status: i.status,
+          updatedAt: i.updated_at,
+          createdAt: i.created_at,
+          tags: Array.isArray(i.tags) ? i.tags : undefined
         })),
         lastUpdated: new Date().toISOString()
       };
@@ -244,6 +261,63 @@ export class PersonaOrchestrator {
         userId,
         lastUpdated: new Date().toISOString()
       };
+    }
+  }
+
+  private static async getSentimentSummary(userId: number): Promise<{
+    polarity: number;
+    score: number;
+    modelVersion: string;
+    updatedAt?: string;
+    averagePolarity?: number;
+    averageScore?: number;
+    totalSamples?: number;
+  } | null> {
+    try {
+      // TODO: Add sentiment_metrics table to RxDB schema
+        `SELECT sm.polarity, sm.score, sm.model_version, sm.created_at
+         FROM sentiment_metrics sm
+         JOIN persona_messages pm ON sm.message_id = pm.id
+         JOIN persona_sessions ps ON pm.session_id = ps.id
+         WHERE ps.user_id = ?
+         ORDER BY sm.created_at DESC LIMIT 1`,
+        [userId]
+      ) as {
+        polarity: number;
+        score: number;
+        model_version: string;
+        created_at: string;
+      } | undefined;
+
+      const aggregate = db.get(
+        `SELECT AVG(sm.polarity) AS avg_polarity, AVG(sm.score) AS avg_score, COUNT(*) AS total_samples
+         FROM sentiment_metrics sm
+         JOIN persona_messages pm ON sm.message_id = pm.id
+         JOIN persona_sessions ps ON pm.session_id = ps.id
+         WHERE ps.user_id = ?`,
+        [userId]
+      ) as {
+        avg_polarity: number | null;
+        avg_score: number | null;
+        total_samples: number;
+      } | undefined;
+
+      if (!latest && (!aggregate || !aggregate.total_samples)) {
+        return null;
+      }
+
+      return {
+        polarity: latest?.polarity ?? (aggregate?.avg_polarity ?? 0),
+        score: latest?.score ?? (aggregate?.avg_score ?? 0),
+        modelVersion: latest?.model_version ?? 'unknown',
+        updatedAt: latest?.created_at,
+        averagePolarity: aggregate?.avg_polarity ?? latest?.polarity ?? 0,
+        averageScore: aggregate?.avg_score ?? latest?.score ?? 0,
+        totalSamples: aggregate?.total_samples ?? (latest ? 1 : 0)
+      };
+    } catch (error) {
+      console.error('Error getting sentiment summary:', error);
+      return null;
     }
   }
 

@@ -2,6 +2,7 @@ import { createRxDatabase } from 'rxdb';
 import { getRxStorageMemory } from 'rxdb/plugins/storage-memory';
 import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode';
 import { addRxPlugin } from 'rxdb';
+import { wrappedValidateAjvStorage } from 'rxdb/plugins/validate-ajv';
 import {
   MyDatabase,
   MyDatabaseCollections,
@@ -26,7 +27,9 @@ export async function getRxDB(): Promise<MyDatabase> {
   if (!dbPromise) {
     dbPromise = createRxDatabase<MyDatabaseCollections>({
       name: 'my-chat-brain-db',
-      storage: getRxStorageMemory(),
+      storage: wrappedValidateAjvStorage({
+        storage: getRxStorageMemory()
+      }),
       multiInstance: true, // Allow multiple tabs/windows
       eventReduce: true, // Enable event reduction for better performance
     }).then(async (db) => {
@@ -139,7 +142,7 @@ export class RxDBHelper {
     } else {
       const nextId = await this.getNextId('settings');
       return this.db.settings.insert({
-        id: nextId,
+        id: nextId.toString(),
         user_id: userId,
         key,
         value,
@@ -151,23 +154,24 @@ export class RxDBHelper {
 
   // Chat sessions operations
   async getChatSessions(userId?: number | null) {
-    const selector = userId ? { user_id: userId } : {};
+    const selector = userId ? { user_id: { $eq: userId } } : {};
     return this.db.chat_sessions.find({
       selector,
       sort: [{ created_at: 'desc' }]
     }).exec();
   }
 
-  async getChatSession(id: number) {
+  async getChatSession(id: string | number) {
     return this.db.chat_sessions.findOne(id.toString()).exec();
   }
 
   async createChatSession(sessionData: { title: string; user_id?: number | null }) {
     const now = new Date().toISOString();
     const nextId = await this.getNextId('chat_sessions');
+    const idStr = nextId.toString();
 
     return this.db.chat_sessions.insert({
-      id: nextId,
+      id: idStr,
       title: sessionData.title,
       user_id: sessionData.user_id || null,
       created_at: now,
@@ -175,7 +179,7 @@ export class RxDBHelper {
     });
   }
 
-  async updateChatSession(id: number, updates: Partial<{ title: string; user_id?: number | null }>) {
+  async updateChatSession(id: string | number, updates: Partial<{ title: string; user_id?: number | null }>) {
     const session = await this.db.chat_sessions.findOne(id.toString()).exec();
     if (!session) throw new Error('Chat session not found');
 
@@ -185,39 +189,47 @@ export class RxDBHelper {
     });
   }
 
-  async deleteChatSession(id: number) {
-    const session = await this.db.chat_sessions.findOne(id.toString()).exec();
+  async deleteChatSession(id: string | number) {
+    const idStr = id.toString();
+    const session = await this.db.chat_sessions.findOne(idStr).exec();
     if (session) {
       await session.remove();
       // Also delete all messages in this session
       await this.db.chat_messages.find({
-        selector: { session_id: id }
+        selector: { session_id: idStr }
       }).remove();
     }
   }
 
   // Chat messages operations
-  async getChatMessages(sessionId: number) {
+  async getChatMessages(sessionId: string | number) {
+    const sessionIdStr = sessionId.toString();
     return this.db.chat_messages.find({
-      selector: { session_id: sessionId },
+      selector: {
+        session_id: {
+          $eq: sessionIdStr
+        }
+      },
       sort: [{ timestamp: 'asc' }]
     }).exec();
   }
 
-  async addChatMessage(messageData: { session_id: number; content: string; role: 'user' | 'bot'; timestamp: string }) {
+  async addChatMessage(messageData: { session_id: string | number; content: string; role: 'user' | 'bot'; timestamp: string }) {
     const nextId = await this.getNextId('chat_messages');
+    const sessionIdStr = messageData.session_id.toString();
     return this.db.chat_messages.insert({
-      id: nextId,
-      session_id: messageData.session_id,
+      id: nextId.toString(),
+      session_id: sessionIdStr,
       content: messageData.content,
       role: messageData.role,
       timestamp: messageData.timestamp
     });
   }
 
-  async deleteChatMessages(sessionId: number) {
+  async deleteChatMessages(sessionId: string | number) {
+    const sessionIdStr = sessionId.toString();
     return this.db.chat_messages.find({
-      selector: { session_id: sessionId }
+      selector: { session_id: sessionIdStr }
     }).remove();
   }
 
@@ -230,7 +242,7 @@ export class RxDBHelper {
     }).exec();
   }
 
-  async getNote(id: number) {
+  async getNote(id: string | number) {
     return this.db.notes.findOne(id.toString()).exec();
   }
 
@@ -239,7 +251,7 @@ export class RxDBHelper {
     const nextId = await this.getNextId('notes');
 
     return this.db.notes.insert({
-      id: nextId,
+      id: nextId.toString(),
       title: noteData.title,
       content: noteData.content,
       user_id: noteData.user_id || null,
@@ -283,7 +295,7 @@ export class RxDBHelper {
     const nextId = await this.getNextId('prompts');
 
     return this.db.prompts.insert({
-      id: nextId,
+      id: nextId.toString(),
       content: promptData.content,
       title: promptData.title || null,
       user_id: promptData.user_id || null,
@@ -327,7 +339,7 @@ export class RxDBHelper {
     const nextId = await this.getNextId('memory_nodes');
 
     return this.db.memory_nodes.insert({
-      id: nextId,
+      id: nextId.toString(),
       label: nodeData.label,
       type: nodeData.type,
       user_id: nodeData.user_id || null,
@@ -358,12 +370,32 @@ export class RxDBHelper {
     return this.db.memory_edges.find().exec();
   }
 
+  async findMemoryNode(label: string, type: 'keyword' | 'entity' | 'message' | 'topic' | 'custom', userId: number) {
+    return this.db.memory_nodes.find({
+      selector: {
+        label,
+        type,
+        user_id: userId
+      }
+    }).exec();
+  }
+
+  async findMemoryEdge(sourceId: number, targetId: number, relation: 'related_to' | 'mentioned_in' | 'part_of' | 'temporal' | 'custom') {
+    return this.db.memory_edges.find({
+      selector: {
+        source_id: sourceId,
+        target_id: targetId,
+        relation
+      }
+    }).exec();
+  }
+
   async createMemoryEdge(edgeData: { source_id: number; target_id: number; relation: 'related_to' | 'mentioned_in' | 'part_of' | 'temporal' | 'custom'; weight: number; metadata?: string }) {
     const now = new Date().toISOString();
     const nextId = await this.getNextId('memory_edges');
 
     return this.db.memory_edges.insert({
-      id: nextId,
+      id: nextId.toString(),
       source_id: edgeData.source_id,
       target_id: edgeData.target_id,
       relation: edgeData.relation,

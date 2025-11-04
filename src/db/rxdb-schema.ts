@@ -15,7 +15,8 @@ export const userSchemaLiteral = {
   type: 'object',
   properties: {
     id: {
-      type: 'string'
+      type: 'string',
+      maxLength: 100
     },
     username: {
       type: 'string'
@@ -48,12 +49,14 @@ export const settingsSchemaLiteral = {
   type: 'object',
   properties: {
     id: {
-      type: 'number',
-      minimum: 1
+      type: 'string',
+      maxLength: 100
     },
     user_id: {
       type: 'number',
-      minimum: 1
+      minimum: 1,
+      maximum: 999999999,
+      multipleOf: 1
     },
     key: {
       type: 'string',
@@ -87,8 +90,8 @@ export const chatSessionsSchemaLiteral = {
   type: 'object',
   properties: {
     id: {
-      type: 'number',
-      minimum: 1
+      type: 'string',
+      maxLength: 100
     },
     user_id: {
       type: ['number', 'null']
@@ -99,7 +102,8 @@ export const chatSessionsSchemaLiteral = {
     },
     created_at: {
       type: 'string',
-      format: 'date-time'
+      format: 'date-time',
+      maxLength: 255
     },
     updated_at: {
       type: 'string',
@@ -107,7 +111,7 @@ export const chatSessionsSchemaLiteral = {
     }
   },
   required: ['id', 'title', 'created_at', 'updated_at'],
-  indexes: ['user_id', 'created_at']
+  indexes: ['created_at']
 } as const;
 
 const chatSessionsSchemaTyped = toTypedRxJsonSchema(chatSessionsSchemaLiteral);
@@ -122,12 +126,12 @@ export const chatMessagesSchemaLiteral = {
   type: 'object',
   properties: {
     id: {
-      type: 'number',
-      minimum: 1
+      type: 'string',
+      maxLength: 100
     },
     session_id: {
-      type: 'number',
-      minimum: 1
+      type: 'string',
+      maxLength: 100
     },
     content: {
       type: 'string'
@@ -138,7 +142,8 @@ export const chatMessagesSchemaLiteral = {
     },
     timestamp: {
       type: 'string',
-      format: 'date-time'
+      format: 'date-time',
+      maxLength: 255
     }
   },
   required: ['id', 'session_id', 'content', 'role', 'timestamp'],
@@ -157,8 +162,8 @@ export const promptsSchemaLiteral = {
   type: 'object',
   properties: {
     id: {
-      type: 'number',
-      minimum: 1
+      type: 'string',
+      maxLength: 100
     },
     user_id: {
       type: ['number', 'null']
@@ -172,7 +177,8 @@ export const promptsSchemaLiteral = {
     },
     created_at: {
       type: 'string',
-      format: 'date-time'
+      format: 'date-time',
+      maxLength: 255
     },
     updated_at: {
       type: 'string',
@@ -180,7 +186,7 @@ export const promptsSchemaLiteral = {
     }
   },
   required: ['id', 'content', 'created_at', 'updated_at'],
-  indexes: ['user_id', 'created_at']
+  indexes: ['created_at']
 } as const;
 
 const promptsSchemaTyped = toTypedRxJsonSchema(promptsSchemaLiteral);
@@ -195,8 +201,8 @@ export const notesSchemaLiteral = {
   type: 'object',
   properties: {
     id: {
-      type: 'number',
-      minimum: 1
+      type: 'string',
+      maxLength: 100
     },
     user_id: {
       type: ['number', 'null']
@@ -210,7 +216,8 @@ export const notesSchemaLiteral = {
     },
     created_at: {
       type: 'string',
-      format: 'date-time'
+      format: 'date-time',
+      maxLength: 255
     },
     updated_at: {
       type: 'string',
@@ -218,7 +225,7 @@ export const notesSchemaLiteral = {
     }
   },
   required: ['id', 'title', 'content', 'created_at', 'updated_at'],
-  indexes: ['user_id', 'created_at']
+  indexes: ['created_at']
 } as const;
 
 const notesSchemaTyped = toTypedRxJsonSchema(notesSchemaLiteral);
@@ -233,8 +240,8 @@ export const memoryNodesSchemaLiteral = {
   type: 'object',
   properties: {
     id: {
-      type: 'number',
-      minimum: 1
+      type: 'string',
+      maxLength: 100
     },
     user_id: {
       type: ['number', 'null']
@@ -245,14 +252,16 @@ export const memoryNodesSchemaLiteral = {
     },
     type: {
       type: 'string',
-      enum: ['keyword', 'entity', 'message', 'topic', 'custom']
+      enum: ['keyword', 'entity', 'message', 'topic', 'custom'],
+      maxLength: 20
     },
     metadata: {
       type: 'string'
     },
     created_at: {
       type: 'string',
-      format: 'date-time'
+      format: 'date-time',
+      maxLength: 255
     },
     updated_at: {
       type: 'string',
@@ -260,7 +269,7 @@ export const memoryNodesSchemaLiteral = {
     }
   },
   required: ['id', 'label', 'type', 'created_at', 'updated_at'],
-  indexes: ['user_id', 'type', 'created_at']
+  indexes: ['type', 'created_at']
 } as const;
 
 const memoryNodesSchemaTyped = toTypedRxJsonSchema(memoryNodesSchemaLiteral);
@@ -275,20 +284,25 @@ export const memoryEdgesSchemaLiteral = {
   type: 'object',
   properties: {
     id: {
-      type: 'number',
-      minimum: 1
+      type: 'string',
+      maxLength: 100
     },
     source_id: {
       type: 'number',
-      minimum: 1
+      minimum: 1,
+      maximum: 999999999,
+      multipleOf: 1
     },
     target_id: {
       type: 'number',
-      minimum: 1
+      minimum: 1,
+      maximum: 999999999,
+      multipleOf: 1
     },
     relation: {
       type: 'string',
-      enum: ['related_to', 'mentioned_in', 'part_of', 'temporal', 'custom']
+      enum: ['related_to', 'mentioned_in', 'part_of', 'temporal', 'custom'],
+      maxLength: 20
     },
     weight: {
       type: 'number',

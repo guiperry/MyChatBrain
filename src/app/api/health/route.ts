@@ -1,24 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { typedGet, typedAll } from '@/db/types';
+import { getRxDBHelper } from '@/db/rxdb';
 
 export async function GET(request: NextRequest) {
   try {
-    // Simple database check - just verify we can run a query
-    const result = typedGet<{ health: number }>(db, 'SELECT 1 as health');
+    // Get RxDB helper instance to verify database connectivity
+    const rxdbHelper = await getRxDBHelper();
 
-    // Get schema information
-    const tables = typedAll<{ name: string }>(
-      db,
-      `SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`
-    );
+    // Simple database check - try to get chat sessions
+    const sessions = await rxdbHelper.getChatSessions();
+    const sessionCount = sessions.length;
+
+    // Get collection information
+    const db = await rxdbHelper['db']; // Access the underlying RxDB instance
+    const collections = Object.keys(db.collections);
 
     return NextResponse.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      database: 'connected',
-      result,
-      tables: tables.map(t => t.name)
+      database: 'rxdb_connected',
+      collections,
+      sessionCount
     });
   } catch (error) {
     console.error('Health check failed:', error);

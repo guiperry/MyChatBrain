@@ -18,15 +18,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fetch prompts
-    let prompts: any[] = [];
-    if (userId) {
-      prompts = db.all('SELECT * FROM prompts WHERE user_id = ? OR user_id IS NULL ORDER BY updated_at DESC', [userId]);
-    } else {
-      prompts = db.all('SELECT * FROM prompts WHERE user_id IS NULL ORDER BY updated_at DESC');
-    }
+    // Get RxDB helper instance
+    const rxdbHelper = await db();
 
-    return NextResponse.json({ prompts });
+    // Fetch prompts
+    const prompts = await rxdbHelper.getPrompts(userId);
+
+    return NextResponse.json({
+      prompts: prompts.map(p => p.toJSON())
+    });
   } catch (error) {
     console.error('Error loading prompts:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -56,23 +56,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Content is required' }, { status: 400 });
     }
 
+    // Get RxDB helper instance
+    const rxdbHelper = await db();
+
     // Create the prompt
-    const timestamp = new Date().toISOString();
-    const result = db.run(
-      'INSERT INTO prompts (content, title, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-      [content, title || null, userId, timestamp, timestamp]
-    );
-
-    if (!result.lastInsertRowid) {
-      return NextResponse.json({ error: 'Failed to create prompt' }, { status: 500 });
-    }
-
-    const promptId = result.lastInsertRowid;
-    const prompt = db.get('SELECT * FROM prompts WHERE id = ?', [promptId]);
+    const prompt = await rxdbHelper.createPrompt({
+      content,
+      title: title || null,
+      user_id: userId
+    });
 
     return NextResponse.json({
       message: 'Prompt created successfully',
-      prompt
+      prompt: prompt.toJSON()
     }, { status: 201 });
   } catch (error) {
     console.error('Create prompt error:', error);

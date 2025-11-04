@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { chatSessionsToDTOs } from '@/lib/dataTransformers';
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,55 +23,43 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Get RxDB helper instance
+    const rxdbHelper = await db();
+
     // Fetch chat sessions
-    let userSessions: any[] = [];
-    if (userId) {
-      userSessions = db.all('SELECT * FROM chat_sessions WHERE user_id = ? OR user_id IS NULL ORDER BY updated_at DESC', [userId]);
-    } else {
-      userSessions = db.all('SELECT * FROM chat_sessions ORDER BY updated_at DESC');
-    }
+    const sessions = await rxdbHelper.getChatSessions(userId);
 
     // Fetch messages for these sessions
-    const sessionIds = userSessions.map(session => session.id);
-
-    let allMessages: any[] = [];
-    if (sessionIds.length > 0) {
-      // Get all messages for all sessions
-      const placeholders = sessionIds.map(() => '?').join(',');
-      allMessages = db.all(`SELECT * FROM chat_messages WHERE session_id IN (${placeholders}) ORDER BY timestamp ASC`, sessionIds);
-    }
-
-    console.log(`Retrieved ${allMessages.length} messages for ${sessionIds.length} sessions`);
-
-    // Group messages by session_id
-    const messagesBySession = allMessages.reduce<Record<number, any[]>>(
-      (acc, msg) => {
-        if (!acc[msg.session_id]) {
-          acc[msg.session_id] = [];
-        }
-        acc[msg.session_id].push(msg);
-        return acc;
-      },
-      {}
+    const formattedSessions = await Promise.all(
+      sessions.map(async (session) => {
+        const messages = await rxdbHelper.getChatMessages(session.id);
+        const sessionData = session.toJSON();
+        return {
+          id: parseInt(sessionData.id),
+          user_id: sessionData.user_id || null,
+          title: sessionData.title,
+          created_at: sessionData.created_at,
+          updated_at: sessionData.updated_at,
+          messages: messages.map(msg => {
+            const msgData = msg.toJSON();
+            return {
+              id: parseInt(msgData.id),
+              session_id: parseInt(msgData.session_id),
+              content: msgData.content,
+              role: msgData.role,
+              timestamp: msgData.timestamp
+            };
+          })
+        };
+      })
     );
 
-    // Log the number of messages per session - safely
-    if (Object.keys(messagesBySession).length > 0) {
-      Object.keys(messagesBySession).forEach(sessionId => {
-        const messages = messagesBySession[Number(sessionId)];
-        if (messages) {
-          console.log(`Session ${sessionId} has ${messages.length} messages`);
-        }
-      });
-    }
+    console.log(`Retrieved sessions with messages for user: ${userId || 'anonymous'}`);
 
-    // Format the data for the response
-    const formattedSessions = userSessions.map((session) => ({
-      ...session,
-      messages: messagesBySession[session.id] || [], // Add messages to each session
-    }));
+    // Transform to DTOs for API response
+    const sessionDTOs = chatSessionsToDTOs(formattedSessions);
 
-    return NextResponse.json({ sessions: formattedSessions });
+    return NextResponse.json({ sessions: sessionDTOs });
   } catch (error) {
     console.error('Error loading chats:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

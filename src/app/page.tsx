@@ -8,6 +8,7 @@ import AIBody from '../components/AIBody';
 import RightSideBar from '../components/RightSideBar';
 import ObsidianPanel from '../components/ObsidianPanel';
 import MemoryPanel from '../components/MemoryPanel';
+import PersonaAnalyticsSidebar from '../components/PersonaAnalyticsSidebar';
 import styles from './page.module.css';
 
 export default function Home() {
@@ -82,6 +83,7 @@ export default function Home() {
 
   const [isObsidianOpen, setIsObsidianOpen] = useState(false);
   const [isMemoryPanelOpen, setIsMemoryPanelOpen] = useState(false);
+  const [isPersonaAnalyticsOpen, setIsPersonaAnalyticsOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<'gemini' | 'modeldeployer'>('gemini');
   const [notes, setNotes] = useState<Array<{id: string; title: string; content: string; createdAt: Date}>>([]);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
@@ -221,6 +223,10 @@ export default function Home() {
         onOpenMemory={() => {
           setIsMemoryPanelOpen(true);
         }}
+        onOpenPersonaAnalytics={() => {
+          console.log('onOpenPersonaAnalytics called, setting isPersonaAnalyticsOpen to true');
+          setIsPersonaAnalyticsOpen(true);
+        }}
         onClose={() => setIsRightSidebarOpen(false)}
         isOpen={isRightSidebarOpen}
         notes={notes}
@@ -359,6 +365,11 @@ export default function Home() {
       <MemoryPanel
         isOpen={isMemoryPanelOpen}
         onClose={() => setIsMemoryPanelOpen(false)}
+      />
+
+      <PersonaAnalyticsSidebar
+        isOpen={isPersonaAnalyticsOpen}
+        onClose={() => setIsPersonaAnalyticsOpen(false)}
       />
     </div>
   );

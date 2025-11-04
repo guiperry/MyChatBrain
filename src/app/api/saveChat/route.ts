@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const { title, messages, sessionId: existingSessionId } = body as {
       title: string;
       messages: ChatHistoryItem[];
-      sessionId?: number | null
+      sessionId?: string | null
     };
 
     // Log the received data for debugging
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create or update the session first
-    let sessionId: number;
+    let sessionId: string;
 
     if (existingSessionId) {
       // Check if the session exists
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         const msgTimestamp = new Date().toISOString();
 
         await rxdbHelper.addChatMessage({
-          session_id: sessionId,
+          session_id: sessionId.toString(),
           content: message.text,
           role: message.type,
           timestamp: msgTimestamp

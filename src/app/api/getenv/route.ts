@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { getRxDBHelper } from '@/db/rxdb';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { DecodedToken } from '@/types';
-import { typedGet } from '@/db/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,9 +19,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Get RxDB helper instance
+    const rxdbHelper = await getRxDBHelper();
+
     // Get key from URL
     const { searchParams } = new URL(request.url);
-    const key = searchParams.get('key');
+    const key: string = searchParams.get('key') || '';
 
     // If no key provided, return all settings
     if (!key) {
@@ -36,67 +38,65 @@ export async function GET(request: NextRequest) {
       ];
 
       for (const settingKey of settingKeys) {
-        let setting: { value: string } | undefined;
+        let settingValue = '';
         if (userId) {
           // Get user-specific setting
-          setting = typedGet<{ value: string }>(
-            db,
-            'SELECT * FROM settings WHERE user_id = ? AND key = ?',
-            [userId, settingKey]
-          );
+          const setting = await rxdbHelper.getSetting(userId, settingKey);
+          if (setting) {
+            settingValue = setting.value || '';
+          }
         }
 
-        // If no user-specific setting, try to get a global setting
-        if (!setting) {
-          setting = typedGet<{ value: string }>(
-            db,
-            'SELECT * FROM settings WHERE user_id = 0 AND key = ?',
-            [settingKey]
-          );
+        // If no user-specific setting, try to get a global setting (user_id = null)
+        if (!settingValue) {
+          const settings = await rxdbHelper.getSettings(null as any);
+          const globalSetting = settings.find(s => s.key === settingKey);
+          if (globalSetting) {
+            settingValue = globalSetting.value || '';
+          }
         }
 
         // For unauthenticated requests or if setting not found, provide default values
-        if (!setting) {
+        if (!settingValue) {
           // Return default values for certain keys
           if (settingKey === 'modelName') {
-            allSettings[settingKey] = 'gemini-1.5-pro';
+            settingValue = 'gemini-1.5-pro';
           } else if (settingKey === 'geminiKey') {
-            allSettings[settingKey] = '';
+            settingValue = '';
           } else if (settingKey === 'theme') {
-            allSettings[settingKey] = 'light';
+            settingValue = 'light';
           } else {
-            allSettings[settingKey] = '';
+            settingValue = '';
           }
-        } else {
-          allSettings[settingKey] = setting.value;
         }
+
+        allSettings[settingKey] = settingValue;
       }
 
       return NextResponse.json(allSettings);
     }
 
     // Get the setting
-    let setting: { value: string } | undefined;
+    let settingValue = '';
     if (userId) {
       // Get user-specific setting
-      setting = typedGet<{ value: string }>(
-        db,
-        'SELECT * FROM settings WHERE user_id = ? AND key = ?',
-        [userId, key]
-      );
+      const setting = await rxdbHelper.getSetting(userId, key);
+      if (setting) {
+        settingValue = setting.value || '';
+      }
     }
 
     // If no user-specific setting, try to get a global setting
-    if (!setting) {
-      setting = typedGet<{ value: string }>(
-        db,
-        'SELECT * FROM settings WHERE user_id = 0 AND key = ?',
-        [key]
-      );
+    if (!settingValue) {
+      const settings = await rxdbHelper.getSettings(null as any);
+      const globalSetting = settings.find(s => s.key === key);
+      if (globalSetting) {
+        settingValue = (globalSetting.value || '') as string;
+      }
     }
 
     // For unauthenticated requests or if setting not found, provide default values
-    if (!setting) {
+    if (!settingValue) {
       // Return default values for certain keys
       if (key === 'model') {
         return NextResponse.json({ value: 'gemini-1.5-pro' });
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ value: setting.value });
+    return NextResponse.json({ value: settingValue });
   } catch (error) {
     console.error('Get setting error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

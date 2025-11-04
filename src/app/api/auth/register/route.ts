@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { getRxDBHelper } from '@/db/rxdb';
 import { hashPassword, createToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
-import type { DbUser } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,14 +30,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 6 characters long' }, { status: 400 });
     }
 
+    // Get RxDB helper
+    const rxdbHelper = await getRxDBHelper();
+
     // Check if username already exists
-    const existingUsername = db.get('SELECT id FROM users WHERE username = ?', [username.trim()]) as { id: number } | null;
+    const existingUsername = await rxdbHelper.getUserByUsername(username.trim());
     if (existingUsername) {
       return NextResponse.json({ error: 'Username already taken' }, { status: 400 });
     }
 
     // Check if email already exists
-    const existingEmail = db.get('SELECT id FROM users WHERE email = ?', [email.trim().toLowerCase()]) as { id: number } | null;
+    const existingEmail = await rxdbHelper.getUserByEmail(email.trim().toLowerCase());
     if (existingEmail) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
     }
@@ -47,17 +49,13 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await hashPassword(password);
 
     // Create user
-    const timestamp = new Date().toISOString();
-    const result = db.run(
-      'INSERT INTO users (username, email, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-      [username.trim(), email.trim().toLowerCase(), hashedPassword, timestamp, timestamp]
-    );
+    const user = await rxdbHelper.createUser({
+      username: username.trim(),
+      email: email.trim().toLowerCase(),
+      password: hashedPassword
+    });
 
-    if (!result.lastInsertRowid) {
-      return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
-    }
-
-    const userId = result.lastInsertRowid as number;
+    const userId = parseInt(user.id);
 
     // Create JWT token
     const token = createToken(userId);

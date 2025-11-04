@@ -48,17 +48,18 @@ export async function getCurrentUser(req: NextRequest): Promise<any> {
     return null;
   }
 
-  const user = await db.get(
-    'SELECT * FROM users WHERE id = ?',
-    [decoded.userId]
-  ) as DbUser | null;
+  // Get RxDB helper instance
+  const rxdbHelper = await db();
+
+  const user = await rxdbHelper.getUser(decoded.userId.toString());
 
   if (!user) {
     return null;
   }
 
   // Don't return the password
-  const { password, ...userWithoutPassword } = user;
+  const userData = user.toJSON();
+  const { password, ...userWithoutPassword } = userData;
   return userWithoutPassword;
 }
 
@@ -78,4 +79,3 @@ export function logout(): void {
   const cookieStore = cookies();
   cookieStore.delete('gemini-auth-token');
 }
-

@@ -1,19 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { getRxDBHelper } from '@/db/rxdb';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { storeNodeVector } from '@/lib/memoryVectors';
-import { MemoryNodes, MemoryEdges } from '@/db/schema';
-
-// Helper function for type-safe database queries
-function typedAll<T>(db: any, query: string, params: any[] = []): T[] {
-  return db.all(query, params) as T[];
-}
-
-// Helper function for type-safe database get
-function typedGet<T>(db: any, query: string, params: any[] = []): T {
-  return db.get(query, params) as T;
-}
 
 // GET /api/memory - Get the memory graph for the current user
 export async function GET(req: NextRequest) {
@@ -35,28 +24,24 @@ export async function GET(req: NextRequest) {
     // Get the user ID from the token
     const userId = decoded.userId;
 
-    // Get all nodes for the user with type safety
-    const nodes = typedAll<MemoryNodes>(
-      db,
-      'SELECT id, label, type, metadata, created_at, updated_at FROM memory_nodes WHERE user_id = ?',
-      [userId]
+    // Get RxDB helper instance
+    const rxdbHelper = await getRxDBHelper();
+
+    // Get all nodes for the user
+    const nodes = await rxdbHelper.getMemoryNodes(userId);
+
+    // Get all edges
+    const edges = await rxdbHelper.getMemoryEdges();
+
+    // Filter edges to only include those connected to user's nodes
+    const userNodeIds = new Set(nodes.map(node => parseInt(node.id)));
+    const userEdges = edges.filter(edge =>
+      userNodeIds.has(edge.source_id) && userNodeIds.has(edge.target_id)
     );
 
-    // Get all edges for the user's nodes with type safety
-    const edges = typedAll<MemoryEdges>(
-      db,
-      `
-      SELECT e.id, e.source_id, e.target_id, e.relation, e.weight, e.metadata, e.created_at, e.updated_at
-      FROM memory_edges e
-      JOIN memory_nodes n1 ON e.source_id = n1.id
-      JOIN memory_nodes n2 ON e.target_id = n2.id
-      WHERE n1.user_id = ? AND n2.user_id = ?
-    `, [userId, userId]
-    );
-
-    // Format the response with proper typing
-    const formattedNodes = nodes.map((node: MemoryNodes) => ({
-      id: node.id!.toString(),
+    // Format the response
+    const formattedNodes = nodes.map((node) => ({
+      id: node.id,
       label: node.label,
       type: node.type,
       metadata: node.metadata ? JSON.parse(node.metadata) : {},
@@ -64,8 +49,8 @@ export async function GET(req: NextRequest) {
       updatedAt: node.updated_at
     }));
 
-    const formattedEdges = edges.map((edge: MemoryEdges) => ({
-      id: edge.id!.toString(),
+    const formattedEdges = userEdges.map((edge) => ({
+      id: edge.id,
       source: edge.source_id.toString(),
       target: edge.target_id.toString(),
       relation: edge.relation,
@@ -132,18 +117,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Insert the new node
-    const result = db.run(
-      `INSERT INTO memory_nodes (user_id, label, type, metadata) VALUES (?, ?, ?, ?)`,
-      [userId, label, type, metadata ? JSON.stringify(metadata) : null]
-    );
+    // Get RxDB helper instance
+    const rxdbHelper = await getRxDBHelper();
 
-    // Get the inserted node
-    const node = typedGet<MemoryNodes>(db, 'SELECT * FROM memory_nodes WHERE id = ?', [result.lastInsertRowid]);
+    // Create the new node
+    const node = await rxdbHelper.createMemoryNode({
+      label,
+      type: type as 'keyword' | 'entity' | 'message' | 'topic' | 'custom',
+      user_id: userId,
+      metadata: metadata ? JSON.stringify(metadata) : ''
+    });
 
     // Store the node in the vector database
     await storeNodeVector(
-      node.id!.toString(),
+      node.id,
       node.label,
       node.type,
       userId.toString(),
@@ -153,7 +140,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       node: {
-        id: node.id!.toString(),
+        id: node.id,
         label: node.label,
         type: node.type,
         metadata: node.metadata ? JSON.parse(node.metadata) : {},

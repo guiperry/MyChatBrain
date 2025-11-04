@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { getRxDBHelper } from '@/db/rxdb';
 import { comparePasswords, createToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
-import type { DbUser } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,8 +13,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Get RxDB helper
+    const rxdbHelper = await getRxDBHelper();
+
     // Find user by username
-    const user = db.get('SELECT * FROM users WHERE username = ?', [username]) as DbUser | null;
+    const user = await rxdbHelper.getUserByUsername(username);
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
@@ -28,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create JWT token
-    const token = createToken(user.id);
+    const token = createToken(parseInt(user.id));
 
     // Set cookie
     const cookieStore = cookies();
@@ -43,7 +45,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Return user data (without password)
-    const { password: _, ...userWithoutPassword } = user;
+    const userData = user.toJSON();
+    const { password: _, ...userWithoutPassword } = userData;
     return NextResponse.json({
       user: userWithoutPassword
     });

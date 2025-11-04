@@ -117,76 +117,79 @@ export async function saveToMemoryGraph(
   relationships: ExtractedRelationship[],
   userId: number
 ) {
+  // Get RxDB helper instance
+  const rxdbHelper = await db();
+
   // Map to store entity text to node ID
   const entityMap: Record<string, number> = {};
-  
+
   // Save entities
   for (const entity of entities) {
     // Check if the entity already exists
-    const existingNode = db.get(
-      'SELECT id FROM memory_nodes WHERE label = ? AND type = ? AND user_id = ?',
-      [entity.text, entity.type, userId]
+    const existingNodes = await rxdbHelper.findMemoryNode(
+      entity.text,
+      entity.type as 'keyword' | 'entity' | 'message' | 'topic' | 'custom',
+      userId
     );
-    
-    let nodeId;
-    if (existingNode) {
+
+    let nodeId: number;
+    if (existingNodes.length > 0) {
       // Update the existing node
-      nodeId = (existingNode as { id: number }).id;
-      db.run(
-        'UPDATE memory_nodes SET metadata = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [entity.metadata ? JSON.stringify(entity.metadata) : null, nodeId]
-      );
+      const existingNode = existingNodes[0];
+      nodeId = parseInt(existingNode.id);
+      await rxdbHelper.updateMemoryNode(nodeId, {
+        metadata: entity.metadata ? JSON.stringify(entity.metadata) : ''
+      });
     } else {
       // Insert a new node
-      const result = db.run(
-        'INSERT INTO memory_nodes (user_id, label, type, metadata) VALUES (?, ?, ?, ?)',
-        [userId, entity.text, entity.type, entity.metadata ? JSON.stringify(entity.metadata) : null]
-      );
-      // Convert BigInt to Number if necessary
-      nodeId = typeof result.lastInsertRowid === 'bigint'
-        ? Number(result.lastInsertRowid)
-        : result.lastInsertRowid as number;
+      const newNode = await rxdbHelper.createMemoryNode({
+        label: entity.text,
+        type: entity.type as 'keyword' | 'entity' | 'message' | 'topic' | 'custom',
+        user_id: userId,
+        metadata: entity.metadata ? JSON.stringify(entity.metadata) : ''
+      });
+      nodeId = parseInt(newNode.id);
     }
 
     // Store the node ID in the map
     entityMap[entity.text] = nodeId;
   }
-  
+
   // Save relationships
   for (const relationship of relationships) {
     const sourceId = entityMap[relationship.source];
     const targetId = entityMap[relationship.target];
-    
+
     if (!sourceId || !targetId) {
       console.warn('Missing node ID for relationship:', relationship);
       continue;
     }
-    
+
     // Check if the relationship already exists
-    const existingEdge = db.get(
-      'SELECT id, weight FROM memory_edges WHERE source_id = ? AND target_id = ? AND relation = ?',
-      [sourceId, targetId, relationship.relation]
+    const existingEdges = await rxdbHelper.findMemoryEdge(
+      sourceId,
+      targetId,
+      relationship.relation as 'related_to' | 'mentioned_in' | 'part_of' | 'temporal' | 'custom'
     );
-    
-    if (existingEdge) {
+
+    if (existingEdges.length > 0) {
       // Update the existing edge with increased weight
-      const newWeight = Math.min(10, (existingEdge as { weight: number }).weight + 1);
-      db.run(
-        'UPDATE memory_edges SET weight = ?, metadata = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [newWeight, relationship.metadata ? JSON.stringify(relationship.metadata) : null, (existingEdge as { id: number }).id]
-      );
+      const existingEdge = existingEdges[0];
+      const newWeight = Math.min(10, existingEdge.weight + 1);
+      await existingEdge.patch({
+        weight: newWeight,
+        metadata: relationship.metadata ? JSON.stringify(relationship.metadata) : '',
+        updated_at: new Date().toISOString()
+      });
     } else {
       // Insert a new edge
-      db.run(
-        'INSERT INTO memory_edges (source_id, target_id, relation, weight, metadata) VALUES (?, ?, ?, ?, ?)',
-        [
-          sourceId,
-          targetId,
-          relationship.relation,
-          relationship.weight,
-          relationship.metadata ? JSON.stringify(relationship.metadata) : null
-        ]
-      );
+      await rxdbHelper.createMemoryEdge({
+        source_id: sourceId,
+        target_id: targetId,
+        relation: relationship.relation as 'related_to' | 'mentioned_in' | 'part_of' | 'temporal' | 'custom',
+        weight: relationship.weight,
+        metadata: relationship.metadata ? JSON.stringify(relationship.metadata) : ''
+      });
     }
   }
 }
