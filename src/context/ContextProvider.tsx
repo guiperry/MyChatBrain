@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useState, useRef, Dispatch, SetStateAction, useEffect } from "react";
 import { ChatHistoryItem } from "@/types";
+import { chatMessagesToHistoryItems, isValidChatHistoryItemsArray } from "@/lib/dataTransformers";
 
 interface ContextProps {
   theme: "light" | "dark";
@@ -191,6 +192,12 @@ export const ContextProvider: React.FC<ProviderProps> = ({ children }: ProviderP
 
       // Step 2: Add messages to the session
       console.log(`Adding ${chatHistory.length} messages to session ${sessionId}`);
+
+      // Validate chat history before sending
+      if (!isValidChatHistoryItemsArray(chatHistory)) {
+        console.error('Invalid chat history format');
+        throw new Error('Invalid chat history format');
+      }
 
       try {
         const messagesResponse = await fetch('/api/addMessages', {

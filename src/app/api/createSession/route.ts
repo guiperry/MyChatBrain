@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { DecodedToken, CreateChatSessionInput } from '@/types';
+import { isValidChatSession, safeTransform } from '@/lib/dataTransformers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,8 +23,10 @@ export async function POST(request: NextRequest) {
     const { title } = body as { title: string };
 
     // Validate input
-    if (!title) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      return NextResponse.json({
+        error: 'Title is required and must be a non-empty string'
+      }, { status: 400 });
     }
 
     console.log(`Creating new session with title: ${title} and userId: ${userId}`);

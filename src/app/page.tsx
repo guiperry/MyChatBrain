@@ -6,6 +6,7 @@ import LeftSidebar from '../components/LeftSidebar';
 import ChatBody from '../components/ChatBody';
 import AIBody from '../components/AIBody';
 import RightSideBar from '../components/RightSideBar';
+import CreatorAlgorithm from '../components/CreatorAlgorithm';
 import ObsidianPanel from '../components/ObsidianPanel';
 import MemoryPanel from '../components/MemoryPanel';
 import PersonaAnalyticsSidebar from '../components/PersonaAnalyticsSidebar';
@@ -87,6 +88,7 @@ export default function Home() {
   const [selectedModel, setSelectedModel] = useState<'gemini' | 'modeldeployer'>('gemini');
   const [notes, setNotes] = useState<Array<{id: string; title: string; content: string; createdAt: Date}>>([]);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+  const [activeCenterView, setActiveCenterView] = useState<'chat' | 'creator'>('chat');
 
   // Custom setNotes with logging
   const setNotesWithLogging = useCallback((newNotes: Array<{id: string; title: string; content: string; createdAt: Date}> | ((prevNotes: Array<{id: string; title: string; content: string; createdAt: Date}>) => Array<{id: string; title: string; content: string; createdAt: Date}>)) => {
@@ -209,7 +211,9 @@ export default function Home() {
     <div className={styles.container}>
       <LeftSidebar />
       <div className={styles.mainContent}>
-        {selectedModel === 'gemini' ? (
+        {activeCenterView === 'creator' ? (
+          <CreatorAlgorithm onClose={() => setActiveCenterView('chat')} />
+        ) : selectedModel === 'gemini' ? (
           <ChatBody currentModel={selectedModel} />
         ) : (
           <AIBody />
@@ -226,6 +230,10 @@ export default function Home() {
         onOpenPersonaAnalytics={() => {
           console.log('onOpenPersonaAnalytics called, setting isPersonaAnalyticsOpen to true');
           setIsPersonaAnalyticsOpen(true);
+        }}
+        onOpenCreatorAlgorithm={() => {
+          setActiveCenterView('creator');
+          setIsRightSidebarOpen(false);
         }}
         onClose={() => setIsRightSidebarOpen(false)}
         isOpen={isRightSidebarOpen}

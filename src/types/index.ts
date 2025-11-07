@@ -192,3 +192,197 @@ export type CreateMemoryEdgeInput = {
   weight: number;
   metadata?: string;
 };
+
+// Persona-related types (matching database schema)
+export interface PersonaUser {
+  id: number;
+  user_id: number;
+  platform_ids: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PersonaSession {
+  id: number;
+  user_id: number;
+  session_id: number | null;
+  started_at: string;
+  channel: string;
+  context: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PersonaMessage {
+  id: number;
+  session_id: number;
+  message_id: number | null;
+  turn_index: number;
+  role: 'user' | 'assistant';
+  text: string;
+  timestamp: string;
+}
+
+export interface SentimentMetric {
+  id: number;
+  message_id: number;
+  polarity: number;
+  score: number;
+  model_version: string;
+  created_at: string;
+}
+
+export interface InterestMetric {
+  id: number;
+  user_id: number;
+  topic: string;
+  weight: number;
+  decay_factor: number;
+  last_updated: string;
+  created_at: string;
+}
+
+export interface GoalMetric {
+  id: number;
+  user_id: number;
+  description: string;
+  status: 'active' | 'completed' | 'cancelled';
+  confidence: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PersonalityTrait {
+  id: number;
+  user_id: number;
+  trait_label: string;
+  percentile: number;
+  evidence_count: number;
+  last_updated: string;
+  created_at: string;
+}
+
+export interface ErrorEvent {
+  id: number;
+  session_id: number;
+  type: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  resolution_state: 'open' | 'resolved' | 'ignored';
+  details: string;
+  created_at: string;
+}
+
+export interface ToolUsage {
+  id: number;
+  session_id: number;
+  tool_name: string;
+  success: boolean;
+  latency_ms: number;
+  parameters: string;
+  created_at: string;
+}
+
+export interface IdeaNode {
+  id: number;
+  user_id: number;
+  title: string;
+  tags: string;
+  status: 'draft' | 'refined' | 'implemented';
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Persona snapshot for API responses
+export interface PersonaSnapshot {
+  userId: number;
+  sentiment: {
+    averagePolarity: number;
+    totalMessages: number;
+    recentTrend: number[];
+  };
+  interests: InterestMetric[];
+  goals: GoalMetric[];
+  personality: PersonalityTrait[];
+  errors: ErrorEvent[];
+  toolUsage: ToolUsage[];
+  activity: {
+    totalSessions: number;
+    totalMessages: number;
+    lastActivity: string;
+  };
+}
+
+// Input types for persona operations
+export type CreatePersonaUserInput = {
+  user_id: number;
+  platform_ids?: string;
+};
+
+export type CreatePersonaSessionInput = {
+  user_id: number;
+  session_id?: number | null;
+  channel: string;
+  context?: string;
+};
+
+export type CreatePersonaMessageInput = {
+  session_id: number;
+  message_id?: number | null;
+  turn_index: number;
+  role: 'user' | 'assistant';
+  text: string;
+  timestamp: string;
+};
+
+export type CreateSentimentMetricInput = {
+  message_id: number;
+  polarity: number;
+  score: number;
+  model_version: string;
+};
+
+export type CreateInterestMetricInput = {
+  user_id: number;
+  topic: string;
+  weight: number;
+  decay_factor: number;
+};
+
+export type CreateGoalMetricInput = {
+  user_id: number;
+  description: string;
+  status: 'active' | 'completed' | 'cancelled';
+  confidence: number;
+};
+
+export type CreatePersonalityTraitInput = {
+  user_id: number;
+  trait_label: string;
+  percentile: number;
+  evidence_count: number;
+};
+
+export type CreateErrorEventInput = {
+  session_id: number;
+  type: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  resolution_state: 'open' | 'resolved' | 'ignored';
+  details?: string;
+};
+
+export type CreateToolUsageInput = {
+  session_id: number;
+  tool_name: string;
+  success: boolean;
+  latency_ms: number;
+  parameters?: string;
+};
+
+export type CreateIdeaNodeInput = {
+  user_id: number;
+  title: string;
+  tags?: string;
+  status: 'draft' | 'refined' | 'implemented';
+  content?: string;
+};

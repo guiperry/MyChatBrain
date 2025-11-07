@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Note, DownloadSimple, X, FileText, Brain } from "@phosphor-icons/react";
+import { Note, DownloadSimple, X, FileText, Brain, Sparkle } from "@phosphor-icons/react";
 import { Settings as SettingsIcon } from "react-feather";
 import styles from "./RightSideBar.module.css";
 import "./ScrollStyles.css";
@@ -16,6 +16,7 @@ interface RightSideBarProps {
   onOpenObsidian: () => void;
   onOpenMemory: () => void;
   onOpenPersonaAnalytics?: () => void;
+  onOpenCreatorAlgorithm?: () => void;
   onClose?: () => void;
   isOpen?: boolean;
   notes?: NoteItem[];
@@ -27,6 +28,7 @@ const RightSideBar: React.FC<RightSideBarProps> = ({
   onOpenObsidian,
   onOpenMemory,
   onOpenPersonaAnalytics = () => {},
+  onOpenCreatorAlgorithm = () => {},
   onClose = () => {},
   isOpen = false,
   notes = [],
@@ -156,6 +158,19 @@ const RightSideBar: React.FC<RightSideBarProps> = ({
         >
           <span className={styles.buttonIcon}>📊</span>
           <span className={styles.buttonText}>Persona Analytics</span>
+        </button>
+
+        <button
+          className={styles.obsidianButton}
+          onClick={() => {
+            console.log('Creator Algorithm button clicked');
+            onOpenCreatorAlgorithm();
+          }}
+          aria-label="Open creator algorithm"
+          style={{ marginTop: '8px' }}
+        >
+          <span className={styles.buttonIcon}><Sparkle size={16} /></span>
+          <span className={styles.buttonText}>Creator Algorithm</span>
         </button>
 
         {notes.length > 0 ? (

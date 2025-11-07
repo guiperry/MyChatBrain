@@ -275,6 +275,7 @@ export class PersonaOrchestrator {
   } | null> {
     try {
       // TODO: Add sentiment_metrics table to RxDB schema
+      const latest = db.get(
         `SELECT sm.polarity, sm.score, sm.model_version, sm.created_at
          FROM sentiment_metrics sm
          JOIN persona_messages pm ON sm.message_id = pm.id
@@ -463,3 +464,4 @@ export class PersonaOrchestrator {
     };
   }
 }
+

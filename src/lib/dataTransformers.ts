@@ -12,7 +12,18 @@ import {
   Prompt,
   Note,
   MemoryNode,
-  MemoryEdge
+  MemoryEdge,
+  PersonaUser,
+  PersonaSession,
+  PersonaMessage,
+  SentimentMetric,
+  InterestMetric,
+  GoalMetric,
+  PersonalityTrait,
+  ErrorEvent,
+  ToolUsage,
+  IdeaNode,
+  PersonaSnapshot
 } from '@/types';
 
 /**
@@ -192,6 +203,149 @@ export function isValidMemoryEdge(obj: any): obj is MemoryEdge {
     typeof obj.created_at === 'string' &&
     typeof obj.updated_at === 'string'
   );
+}
+
+// Persona type guards
+export function isValidPersonaUser(obj: any): obj is PersonaUser {
+  return (
+    obj &&
+    typeof obj.id === 'number' &&
+    typeof obj.user_id === 'number' &&
+    typeof obj.platform_ids === 'string' &&
+    typeof obj.created_at === 'string' &&
+    typeof obj.updated_at === 'string'
+  );
+}
+
+export function isValidPersonaSession(obj: any): obj is PersonaSession {
+  return (
+    obj &&
+    typeof obj.id === 'number' &&
+    typeof obj.user_id === 'number' &&
+    (obj.session_id === null || typeof obj.session_id === 'number') &&
+    typeof obj.started_at === 'string' &&
+    typeof obj.channel === 'string' &&
+    typeof obj.context === 'string' &&
+    typeof obj.created_at === 'string' &&
+    typeof obj.updated_at === 'string'
+  );
+}
+
+export function isValidPersonaMessage(obj: any): obj is PersonaMessage {
+  return (
+    obj &&
+    typeof obj.id === 'number' &&
+    typeof obj.session_id === 'number' &&
+    (obj.message_id === null || typeof obj.message_id === 'number') &&
+    typeof obj.turn_index === 'number' &&
+    (obj.role === 'user' || obj.role === 'assistant') &&
+    typeof obj.text === 'string' &&
+    typeof obj.timestamp === 'string'
+  );
+}
+
+export function isValidSentimentMetric(obj: any): obj is SentimentMetric {
+  return (
+    obj &&
+    typeof obj.id === 'number' &&
+    typeof obj.message_id === 'number' &&
+    typeof obj.polarity === 'number' &&
+    typeof obj.score === 'number' &&
+    typeof obj.model_version === 'string' &&
+    typeof obj.created_at === 'string'
+  );
+}
+
+export function isValidInterestMetric(obj: any): obj is InterestMetric {
+  return (
+    obj &&
+    typeof obj.id === 'number' &&
+    typeof obj.user_id === 'number' &&
+    typeof obj.topic === 'string' &&
+    typeof obj.weight === 'number' &&
+    typeof obj.decay_factor === 'number' &&
+    typeof obj.last_updated === 'string' &&
+    typeof obj.created_at === 'string'
+  );
+}
+
+export function isValidGoalMetric(obj: any): obj is GoalMetric {
+  return (
+    obj &&
+    typeof obj.id === 'number' &&
+    typeof obj.user_id === 'number' &&
+    typeof obj.description === 'string' &&
+    ['active', 'completed', 'cancelled'].includes(obj.status) &&
+    typeof obj.confidence === 'number' &&
+    typeof obj.created_at === 'string' &&
+    typeof obj.updated_at === 'string'
+  );
+}
+
+export function isValidPersonalityTrait(obj: any): obj is PersonalityTrait {
+  return (
+    obj &&
+    typeof obj.id === 'number' &&
+    typeof obj.user_id === 'number' &&
+    typeof obj.trait_label === 'string' &&
+    typeof obj.percentile === 'number' &&
+    typeof obj.evidence_count === 'number' &&
+    typeof obj.last_updated === 'string' &&
+    typeof obj.created_at === 'string'
+  );
+}
+
+export function isValidErrorEvent(obj: any): obj is ErrorEvent {
+  return (
+    obj &&
+    typeof obj.id === 'number' &&
+    typeof obj.session_id === 'number' &&
+    typeof obj.type === 'string' &&
+    ['low', 'medium', 'high', 'critical'].includes(obj.severity) &&
+    ['open', 'resolved', 'ignored'].includes(obj.resolution_state) &&
+    typeof obj.details === 'string' &&
+    typeof obj.created_at === 'string'
+  );
+}
+
+export function isValidToolUsage(obj: any): obj is ToolUsage {
+  return (
+    obj &&
+    typeof obj.id === 'number' &&
+    typeof obj.session_id === 'number' &&
+    typeof obj.tool_name === 'string' &&
+    typeof obj.success === 'boolean' &&
+    typeof obj.latency_ms === 'number' &&
+    typeof obj.parameters === 'string' &&
+    typeof obj.created_at === 'string'
+  );
+}
+
+export function isValidIdeaNode(obj: any): obj is IdeaNode {
+  return (
+    obj &&
+    typeof obj.id === 'number' &&
+    typeof obj.user_id === 'number' &&
+    typeof obj.title === 'string' &&
+    typeof obj.tags === 'string' &&
+    ['draft', 'refined', 'implemented'].includes(obj.status) &&
+    typeof obj.content === 'string' &&
+    typeof obj.created_at === 'string' &&
+    typeof obj.updated_at === 'string'
+  );
+}
+
+// ChatHistoryItem validation for API input
+export function isValidChatHistoryItem(obj: any): obj is ChatHistoryItem {
+  return (
+    obj &&
+    typeof obj.text === 'string' &&
+    (obj.type === 'user' || obj.type === 'bot')
+  );
+}
+
+export function isValidChatHistoryItemsArray(obj: any): obj is ChatHistoryItem[] {
+  return Array.isArray(obj) && obj.every(isValidChatHistoryItem);
 }
 
 /**

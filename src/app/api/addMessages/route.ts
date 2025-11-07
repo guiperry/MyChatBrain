@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRxDBHelper } from '@/db/rxdb';
 import { ChatHistoryItem } from '@/types';
+import {
+  isValidChatHistoryItemsArray,
+  historyItemToChatMessage,
+  safeTransform
+} from '@/lib/dataTransformers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,8 +16,16 @@ export async function POST(request: NextRequest) {
     };
 
     // Validate input
-    if (!sessionId || !messages || !Array.isArray(messages) || messages.length === 0) {
-      return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
+    if (!sessionId || !messages) {
+      return NextResponse.json({ error: 'Missing sessionId or messages' }, { status: 400 });
+    }
+
+    // Validate messages array using type guard
+    if (!isValidChatHistoryItemsArray(messages) || messages.length === 0) {
+      return NextResponse.json({
+        error: 'Invalid messages format',
+        details: 'Messages must be an array of objects with text and type properties'
+      }, { status: 400 });
     }
 
     console.log(`Adding ${messages.length} messages to session ${sessionId}`);
@@ -32,17 +45,18 @@ export async function POST(request: NextRequest) {
 
       console.log(`Verified session ${sessionId} exists, proceeding with message insertion`);
 
-      // Insert messages using RxDB helper
+      // Insert messages using RxDB helper with proper transformation
       for (let i = 0; i < messages.length; i++) {
         const message = messages[i];
-        const timestamp = new Date().toISOString();
 
-        await rxdbHelper.addChatMessage({
-          session_id: sessionId,
-          content: message.text,
-          role: message.type as 'user' | 'bot',
-          timestamp
-        });
+        // Use safe transformation to convert ChatHistoryItem to ChatMessage
+        const chatMessage = safeTransform(
+          message,
+          (msg) => historyItemToChatMessage(msg, sessionId as number),
+          `Failed to transform message ${i + 1}`
+        );
+
+        await rxdbHelper.addChatMessage(chatMessage);
       }
 
       console.log(`Inserted ${messages.length} messages for session ${sessionId}`);

@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
-import { chatSessionsToDTOs } from '@/lib/dataTransformers';
+import {
+  chatSessionsToDTOs,
+  chatMessageToHistoryItem,
+  isValidChatSession,
+  isValidChatMessage,
+  safeTransform
+} from '@/lib/dataTransformers';
+import { ChatSession, ChatMessage } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,27 +36,56 @@ export async function GET(request: NextRequest) {
     // Fetch chat sessions
     const sessions = await rxdbHelper.getChatSessions(userId);
 
-    // Fetch messages for these sessions
-    const formattedSessions = await Promise.all(
+    // Fetch messages for these sessions with proper transformation and validation
+    const formattedSessions: ChatSession[] = await Promise.all(
       sessions.map(async (session) => {
         const messages = await rxdbHelper.getChatMessages(session.id);
         const sessionData = session.toJSON();
+
+        // Transform session data with validation
+        const transformedSession = safeTransform(
+          sessionData,
+          (data) => ({
+            id: parseInt(data.id),
+            user_id: data.user_id || null,
+            title: data.title,
+            created_at: data.created_at,
+            updated_at: data.updated_at
+          }),
+          `Failed to transform session ${sessionData.id}`
+        );
+
+        // Validate session
+        if (!isValidChatSession(transformedSession)) {
+          throw new Error(`Invalid session data for session ${sessionData.id}`);
+        }
+
+        // Transform messages with validation
+        const transformedMessages: ChatMessage[] = messages.map(msg => {
+          const msgData = msg.toJSON();
+          const transformedMessage = safeTransform(
+            msgData,
+            (data) => ({
+              id: parseInt(data.id),
+              session_id: parseInt(data.session_id),
+              content: data.content,
+              role: data.role,
+              timestamp: data.timestamp
+            }),
+            `Failed to transform message ${msgData.id}`
+          );
+
+          // Validate message
+          if (!isValidChatMessage(transformedMessage)) {
+            throw new Error(`Invalid message data for message ${msgData.id}`);
+          }
+
+          return transformedMessage;
+        });
+
         return {
-          id: parseInt(sessionData.id),
-          user_id: sessionData.user_id || null,
-          title: sessionData.title,
-          created_at: sessionData.created_at,
-          updated_at: sessionData.updated_at,
-          messages: messages.map(msg => {
-            const msgData = msg.toJSON();
-            return {
-              id: parseInt(msgData.id),
-              session_id: parseInt(msgData.session_id),
-              content: msgData.content,
-              role: msgData.role,
-              timestamp: msgData.timestamp
-            };
-          })
+          ...transformedSession,
+          messages: transformedMessages
         };
       })
     );
