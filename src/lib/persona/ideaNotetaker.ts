@@ -128,17 +128,23 @@ export class IdeaNotetaker {
   static async getUserIdeas(userId: number, status?: 'draft' | 'refined' | 'implemented'): Promise<IdeaNodes[]> {
     try {
       let query: any = { user_id: userId };
-      
+
       if (status) {
         query.status = status;
       }
 
-      const ideas = await db.all(
-        'SELECT * FROM idea_nodes WHERE user_id = ?' + (status ? ' AND status = ?' : '') + ' ORDER BY updatedAt DESC',
-        status ? [userId, status] : [userId]
-      ) as IdeaNodes[];
+      const ideas = await (collections.idea_nodes as any).find(query).toArray();
 
-      return ideas;
+      return ideas.map((idea: any) => ({
+        id: parseInt(idea._id.split('-').pop() || '0'),
+        user_id: idea.user_id,
+        title: idea.title,
+        content: idea.content,
+        tags: idea.tags,
+        status: idea.status,
+        created_at: idea.createdAt,
+        updated_at: idea.updatedAt
+      })).sort((a: IdeaNodes, b: IdeaNodes) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
     } catch (error) {
       console.error('Error getting user ideas:', error);
       return [];

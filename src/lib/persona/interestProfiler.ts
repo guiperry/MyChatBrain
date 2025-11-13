@@ -81,10 +81,10 @@ export class InterestProfiler {
 
       for (const interest of newInterests) {
         // Check if interest already exists
-        const existing = await db.get(
-          'SELECT * FROM interest_metrics WHERE user_id = ? AND topic = ?',
-          [userId, interest.topic]
-        ) as InterestMetrics | undefined;
+        const existing = await collections.interest_metrics.findOne({
+          user_id: userId,
+          topic: interest.topic
+        }) as InterestMetrics | null;
 
         let newWeight: number;
         let decayFactor: number;
@@ -103,17 +103,18 @@ export class InterestProfiler {
 
         // Upsert the interest
         const interestMetric = {
+          _id: (existing as any)?._id || `interest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           user_id: userId,
           topic: interest.topic,
           weight: newWeight,
           decay_factor: decayFactor,
           last_updated: new Date().toISOString(),
-          created_at: existing?.created_at || new Date().toISOString()
+          created_at: (existing as any)?.created_at || new Date().toISOString()
         };
 
         if (existing) {
           await collections.interest_metrics.update(
-            { _id: existing.id },
+            { _id: (existing as any)._id },
             { $set: interestMetric }
           );
         } else {
@@ -121,8 +122,13 @@ export class InterestProfiler {
         }
 
         updatedMetrics.push({
-          id: existing?.id,
-          ...interestMetric
+          id: parseInt(interestMetric._id.split('-').pop() || '0'),
+          user_id: userId,
+          topic: interest.topic,
+          weight: newWeight,
+          decay_factor: decayFactor,
+          last_updated: interestMetric.last_updated,
+          created_at: interestMetric.created_at
         } as InterestMetrics);
       }
 
@@ -138,10 +144,7 @@ export class InterestProfiler {
    */
   static async getCurrentInterests(userId: number): Promise<InterestMetrics[]> {
     try {
-      const interests = await db.all(
-        'SELECT * FROM interest_metrics WHERE user_id = ?',
-        [userId]
-      ) as InterestMetrics[];
+      const interests = await (collections.interest_metrics as any).find({ user_id: userId }).toArray();
 
       // Apply decay to all interests
       const now = new Date();
@@ -155,15 +158,19 @@ export class InterestProfiler {
         // Update in database if significant decay occurred
         if (Math.abs(newWeight - interest.weight) > 0.01) {
           await collections.interest_metrics.update(
-            { _id: interest.id },
+            { _id: interest._id },
             { $set: { weight: newWeight, last_updated: now.toISOString() } }
           );
         }
 
         updatedInterests.push({
-          ...interest,
+          id: parseInt(interest._id.split('-').pop() || '0'),
+          user_id: interest.user_id,
+          topic: interest.topic,
           weight: newWeight,
-          last_updated: now.toISOString()
+          decay_factor: interest.decay_factor,
+          last_updated: now.toISOString(),
+          created_at: interest.created_at
         });
       }
 
@@ -197,10 +204,7 @@ export class InterestProfiler {
    */
   static async decayAllInterests(userId: number): Promise<void> {
     try {
-      const interests = await db.all(
-        'SELECT * FROM interest_metrics WHERE user_id = ?',
-        [userId]
-      ) as InterestMetrics[];
+      const interests = await (collections.interest_metrics as any).find({ user_id: userId }).toArray();
 
       for (const interest of interests) {
         const daysSinceUpdate = this.getDaysSince(interest.last_updated);
@@ -208,11 +212,11 @@ export class InterestProfiler {
 
         if (decayedWeight < 0.01) {
           // Remove very weak interests
-          await collections.interest_metrics.delete({ _id: interest.id });
+          await collections.interest_metrics.delete({ _id: interest._id });
         } else {
           // Update decayed weight
           await collections.interest_metrics.update(
-            { _id: interest.id },
+            { _id: interest._id },
             { $set: { weight: decayedWeight, last_updated: new Date().toISOString() } }
           );
         }

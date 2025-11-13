@@ -273,10 +273,25 @@ export class PersonaOrchestrator {
     totalSamples?: number;
   } | null> {
     try {
-      // TODO: Implement sentiment metrics with Nebula DB collections
-      // For now, return null as the tables haven't been migrated yet
-      console.log('Sentiment metrics not yet implemented with Nebula DB');
-      return null;
+      const sentiments = await (collections.sentiment_metrics as any).find({ user_id: userId }).toArray();
+
+      if (sentiments.length === 0) {
+        return null;
+      }
+
+      const totalPolarity = sentiments.reduce((sum: number, s: any) => sum + s.polarity, 0);
+      const totalScore = sentiments.reduce((sum: number, s: any) => sum + s.score, 0);
+      const latest = sentiments.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+
+      return {
+        polarity: latest.polarity,
+        score: latest.score,
+        modelVersion: latest.model_version,
+        updatedAt: latest.created_at,
+        averagePolarity: totalPolarity / sentiments.length,
+        averageScore: totalScore / sentiments.length,
+        totalSamples: sentiments.length
+      };
     } catch (error) {
       console.error('Error getting sentiment summary:', error);
       return null;
@@ -288,10 +303,16 @@ export class PersonaOrchestrator {
    */
   private static async getRecentErrors(userId: number, limit: number = 5): Promise<any[]> {
     try {
-      // TODO: Implement error events with Nebula DB collections
-      // For now, return empty array as the tables haven't been migrated yet
-      console.log('Error events not yet implemented with Nebula DB');
-      return [];
+      const errors = await (collections.error_events as any).find({ user_id: userId }).toArray();
+
+      return errors
+        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, limit)
+        .map((error: any) => ({
+          type: error.type,
+          severity: error.severity,
+          created_at: error.created_at
+        }));
     } catch (error) {
       console.error('Error getting recent errors:', error);
       return [];
@@ -303,10 +324,16 @@ export class PersonaOrchestrator {
    */
   private static async getRecentToolUsage(userId: number, limit: number = 5): Promise<any[]> {
     try {
-      // TODO: Implement tool usage with Nebula DB collections
-      // For now, return empty array as the tables haven't been migrated yet
-      console.log('Tool usage not yet implemented with Nebula DB');
-      return [];
+      const usages = await (collections.tool_usages as any).find({ user_id: userId }).toArray();
+
+      return usages
+        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, limit)
+        .map((usage: any) => ({
+          tool_name: usage.tool_name,
+          success: usage.success,
+          latency_ms: usage.latency_ms
+        }));
     } catch (error) {
       console.error('Error getting recent tool usage:', error);
       return [];

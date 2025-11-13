@@ -596,18 +596,40 @@ export const collections: any = new Proxy({}, {
       find: (query?: any) => ({
         sort: (sortOptions: any) => ({
           toArray: async () => {
-            const cols = await getCollections();
-            const collection = cols[collectionName];
-            if (!collection) throw new Error(`Collection ${collectionName} not found`);
-            // For now, return all results since sorting might not be implemented
-            return (collection as any).find(query);
+            const db = await getDatabase();
+            // Use SQL query to find documents
+            let sql = `SELECT * FROM ${collectionName}`;
+            const params: any[] = [];
+
+            if (query && Object.keys(query).length > 0) {
+              const conditions = [];
+              for (const [key, value] of Object.entries(query)) {
+                conditions.push(`${key} = ?`);
+                params.push(value);
+              }
+              sql += ` WHERE ${conditions.join(' AND ')}`;
+            }
+
+            // For now, ignore sort options
+            return db.all(sql, params);
           }
         }),
         toArray: async () => {
-          const cols = await getCollections();
-          const collection = cols[collectionName];
-          if (!collection) throw new Error(`Collection ${collectionName} not found`);
-          return (collection as any).find(query);
+          const db = await getDatabase();
+          // Use SQL query to find documents
+          let sql = `SELECT * FROM ${collectionName}`;
+          const params: any[] = [];
+
+          if (query && Object.keys(query).length > 0) {
+            const conditions = [];
+            for (const [key, value] of Object.entries(query)) {
+              conditions.push(`${key} = ?`);
+              params.push(value);
+            }
+            sql += ` WHERE ${conditions.join(' AND ')}`;
+          }
+
+          return db.all(sql, params);
         }
       }),
       findOne: async (query: any) => {

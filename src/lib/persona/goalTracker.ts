@@ -144,10 +144,20 @@ export class GoalTracker {
    */
   static async getActiveGoals(userId: number): Promise<GoalMetrics[]> {
     try {
-      // NebulaDB doesn't have a find method for multiple documents
-      // We need to implement a different approach or use a different database
-      console.warn('getActiveGoals not implemented for NebulaDB');
-      return [];
+      const goals = await (collections.goal_metrics as any).find({
+        user_id: userId,
+        status: 'active'
+      }).toArray();
+
+      return goals.map((goal: any) => ({
+        id: parseInt(goal._id.split('-').pop() || '0'),
+        user_id: goal.user_id,
+        description: goal.description,
+        status: goal.status,
+        confidence: goal.confidence,
+        created_at: goal.created_at,
+        updated_at: goal.updated_at
+      }));
     } catch (error) {
       console.error('Error getting active goals:', error);
       return [];
@@ -159,10 +169,17 @@ export class GoalTracker {
    */
   static async getAllGoals(userId: number): Promise<GoalMetrics[]> {
     try {
-      // NebulaDB doesn't have a find method for multiple documents
-      // We need to implement a different approach or use a different database
-      console.warn('getAllGoals not implemented for NebulaDB');
-      return [];
+      const goals = await (collections.goal_metrics as any).find({ user_id: userId }).toArray();
+
+      return goals.map((goal: any) => ({
+        id: parseInt(goal._id.split('-').pop() || '0'),
+        user_id: goal.user_id,
+        description: goal.description,
+        status: goal.status,
+        confidence: goal.confidence,
+        created_at: goal.created_at,
+        updated_at: goal.updated_at
+      }));
     } catch (error) {
       console.error('Error getting all goals:', error);
       return [];

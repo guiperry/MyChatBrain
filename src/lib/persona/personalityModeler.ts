@@ -97,10 +97,10 @@ export class PersonalityModeler {
 
       for (const trait of newTraits) {
         // Check if trait already exists
-        const existing = await db.get(
-          'SELECT * FROM personality_traits WHERE user_id = ? AND trait_label = ?',
-          [userId, trait.trait]
-        ) as PersonalityTraits | undefined;
+        const existing = await collections.personality_traits.findOne({
+          user_id: userId,
+          trait_label: trait.trait
+        }) as any;
 
         if (existing) {
           // Update existing trait with weighted average
@@ -110,21 +110,28 @@ export class PersonalityModeler {
           );
 
           const updatedTrait = {
-            ...existing,
+            _id: existing._id,
+            user_id: existing.user_id,
+            trait_label: existing.trait_label,
             percentile: blendedPercentile,
             evidence_count: newEvidenceCount,
-            last_updated: new Date().toISOString()
+            last_updated: new Date().toISOString(),
+            created_at: existing.created_at
           };
 
           await collections.personality_traits.update(
-            { _id: existing.id },
+            { _id: existing._id },
             { $set: updatedTrait }
           );
 
-          updatedTraits.push(updatedTrait);
+          updatedTraits.push({
+            id: parseInt(existing._id.split('-').pop() || '0'),
+            ...updatedTrait
+          });
         } else {
           // Create new trait
           const personalityTrait = {
+            _id: `trait-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             user_id: userId,
             trait_label: trait.trait,
             percentile: trait.percentile,
@@ -134,7 +141,10 @@ export class PersonalityModeler {
           };
 
           const inserted = await collections.personality_traits.insert(personalityTrait);
-          updatedTraits.push(inserted as PersonalityTraits);
+          updatedTraits.push({
+            id: parseInt(personalityTrait._id.split('-').pop() || '0'),
+            ...personalityTrait
+          });
         }
       }
 
@@ -150,11 +160,16 @@ export class PersonalityModeler {
    */
   static async getTraits(userId: number): Promise<PersonalityTraits[]> {
     try {
-      const traits = await db.all(
-        'SELECT * FROM personality_traits WHERE user_id = ? ORDER BY evidence_count DESC',
-        [userId]
-      ) as PersonalityTraits[];
-      return traits;
+      const traits = await (collections.personality_traits as any).find({ user_id: userId }).toArray();
+      return traits.map((trait: any) => ({
+        id: parseInt(trait._id.split('-').pop() || '0'),
+        user_id: trait.user_id,
+        trait_label: trait.trait_label,
+        percentile: trait.percentile,
+        evidence_count: trait.evidence_count,
+        last_updated: trait.last_updated,
+        created_at: trait.created_at
+      })).sort((a: PersonalityTraits, b: PersonalityTraits) => b.evidence_count - a.evidence_count);
     } catch (error) {
       console.error('Error getting personality traits:', error);
       return [];
