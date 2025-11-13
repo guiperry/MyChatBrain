@@ -3,7 +3,6 @@ import { db } from '@/db';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { DecodedToken } from '@/types';
-import { typedGet, typedRun } from '@/db/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,30 +42,11 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check if setting already exists
-    const existingSetting = typedGet<{ id: number; value: string }>(
-      db,
-      'SELECT * FROM settings WHERE user_id = ? AND key = ?',
-      [decoded.userId, key]
-    );
+    // Get RxDB helper instance
+    const NebulaDBHelper = await db();
 
-    const timestamp = new Date().toISOString();
-
-    if (existingSetting) {
-      // Update existing setting
-      typedRun(
-        db,
-        'UPDATE settings SET value = ?, updated_at = ? WHERE id = ?',
-        [value, timestamp, existingSetting.id]
-      );
-    } else {
-      // Create new setting
-      typedRun(
-        db,
-        'INSERT INTO settings (user_id, key, value, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-        [decoded.userId, key, value, timestamp, timestamp]
-      );
-    }
+    // Use RxDB to set the setting
+    await NebulaDBHelper.setSetting(Number(decoded.userId), key, value);
 
     return NextResponse.json({ message: 'Setting updated successfully' });
   } catch (error) {

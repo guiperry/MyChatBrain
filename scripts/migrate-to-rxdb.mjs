@@ -36,11 +36,11 @@ if (!fs.existsSync(dbPath)) {
 const sqlite = new Database(dbPath);
 
 // Initialize RxDB
-let rxdbHelper;
+let NebulaDBHelper;
 try {
   // Import RxDB helper directly
-  const { getRxDBHelper } = await import('../src/db/rxdb.js');
-  rxdbHelper = await getRxDBHelper();
+  const { getNebulaDBHelper } = await import('../src/db/rxdb.js');
+  NebulaDBHelper = await getNebulaDBHelper();
   console.log('RxDB initialized successfully');
 } catch (error) {
   console.error('Failed to initialize RxDB:', error);
@@ -70,7 +70,7 @@ async function migrateTable(tableName, sqliteQuery, rxdbInsertFunction) {
 
 async function migrateUsers() {
   await migrateTable('users', 'SELECT * FROM users', async (row) => {
-    await rxdbHelper.createUser({
+    await NebulaDBHelper.createUser({
       username: row.username,
       email: row.email,
       password: row.password
@@ -80,13 +80,13 @@ async function migrateUsers() {
 
 async function migrateSettings() {
   await migrateTable('settings', 'SELECT * FROM settings', async (row) => {
-    await rxdbHelper.setSetting(row.user_id, row.key, row.value || '');
+    await NebulaDBHelper.setSetting(row.user_id, row.key, row.value || '');
   });
 }
 
 async function migrateChatSessions() {
   await migrateTable('chat_sessions', 'SELECT * FROM chat_sessions', async (row) => {
-    await rxdbHelper.createChatSession({
+    await NebulaDBHelper.createChatSession({
       title: row.title,
       user_id: row.user_id
     });
@@ -95,7 +95,7 @@ async function migrateChatSessions() {
 
 async function migrateChatMessages() {
   await migrateTable('chat_messages', 'SELECT * FROM chat_messages', async (row) => {
-    await rxdbHelper.addChatMessage({
+    await NebulaDBHelper.addChatMessage({
       session_id: row.session_id,
       content: row.content,
       role: row.role,
@@ -106,7 +106,7 @@ async function migrateChatMessages() {
 
 async function migratePrompts() {
   await migrateTable('prompts', 'SELECT * FROM prompts', async (row) => {
-    await rxdbHelper.createPrompt({
+    await NebulaDBHelper.createPrompt({
       content: row.content,
       title: row.title,
       user_id: row.user_id
@@ -116,7 +116,7 @@ async function migratePrompts() {
 
 async function migrateNotes() {
   await migrateTable('notes', 'SELECT * FROM notes', async (row) => {
-    await rxdbHelper.createNote({
+    await NebulaDBHelper.createNote({
       title: row.title,
       content: row.content,
       user_id: row.user_id
@@ -126,7 +126,7 @@ async function migrateNotes() {
 
 async function migrateMemoryNodes() {
   await migrateTable('memory_nodes', 'SELECT * FROM memory_nodes', async (row) => {
-    await rxdbHelper.createMemoryNode({
+    await NebulaDBHelper.createMemoryNode({
       label: row.label,
       type: row.type,
       user_id: row.user_id,
@@ -137,7 +137,7 @@ async function migrateMemoryNodes() {
 
 async function migrateMemoryEdges() {
   await migrateTable('memory_edges', 'SELECT * FROM memory_edges', async (row) => {
-    await rxdbHelper.createMemoryEdge({
+    await NebulaDBHelper.createMemoryEdge({
       source_id: row.source_id,
       target_id: row.target_id,
       relation: row.relation,

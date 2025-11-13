@@ -1,3 +1,5 @@
+import { db, collections } from '@/database/nebuladb';
+
 import { Pinecone } from '@pinecone-database/pinecone';
 import { getEmbedding } from './vectorstore';
 

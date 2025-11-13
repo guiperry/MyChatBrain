@@ -1,5 +1,7 @@
+import { db, collections } from '@/database/nebuladb';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { getNebulaDBHelper } from '@/database/nebuladb-helper';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
@@ -31,13 +33,24 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete all notes for the user
+    const dbHelper = await getNebulaDBHelper();
     let deleteResult;
     if (userId) {
       console.log('Deleting all notes for user ID:', userId);
-      deleteResult = db.run('DELETE FROM notes WHERE user_id = ?', [userId]);
+      // Get all notes for the user and delete them one by one
+      const userNotes = await dbHelper.getNotes(userId);
+      for (const note of userNotes) {
+        await dbHelper.deleteNote(parseInt(note.id));
+      }
+      deleteResult = { success: true, count: userNotes.length };
     } else {
       console.log('Deleting all anonymous notes');
-      deleteResult = db.run('DELETE FROM notes WHERE user_id IS NULL');
+      // Get all anonymous notes and delete them one by one
+      const anonymousNotes = await dbHelper.getNotes(null);
+      for (const note of anonymousNotes) {
+        await dbHelper.deleteNote(parseInt(note.id));
+      }
+      deleteResult = { success: true, count: anonymousNotes.length };
     }
 
     console.log('Delete result:', deleteResult);
@@ -45,7 +58,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'All notes deleted successfully',
-      deletedCount: deleteResult.changes
+      deletedCount: deleteResult.count
     });
   } catch (error: any) {
     console.error('Error deleting notes:', error);

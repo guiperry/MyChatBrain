@@ -1,29 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { getNebulaDBHelper } from '@/database/nebuladb-helper';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('Checking RxDB status...');
+    console.log('Checking NebulaDB status...');
 
     let collections: string[] = [];
     let recordCounts: Record<string, number> = {};
     let error = null;
 
     try {
-      // Get RxDB helper instance
-      const rxdbHelper = await getRxDBHelper();
+      // Get NebulaDB helper instance
+      const nebulaHelper = await getNebulaDBHelper();
 
-      // Get the underlying RxDB instance
-      const db = await rxdbHelper['db'];
-
-      // Get collection names
-      collections = Object.keys(db.collections);
+      // Get collection names from the collections object
+      collections = Object.keys(require('@/database/nebuladb').collections);
 
       // Get record counts for each collection
       for (const collectionName of collections) {
         try {
-          const collection = (db.collections as any)[collectionName];
-          const docs = await collection.find().exec();
+          const collection = (require('@/database/nebuladb').collections as any)[collectionName];
+          // For NebulaDB, we might need to use a different method to count
+          // Since we don't have a direct count method, we'll try to get all and count
+          const docs = await collection.find().toArray();
           recordCounts[collectionName] = docs.length;
         } catch (err) {
           recordCounts[collectionName] = -1; // Error getting count
@@ -37,8 +36,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       status: 'success',
       database: {
-        type: 'RxDB',
-        storage: 'memory', // Based on rxdb.ts configuration
+        type: 'NebulaDB',
+        storage: 'filesystem', // Based on nebuladb.ts configuration
         collections,
         recordCounts,
         error

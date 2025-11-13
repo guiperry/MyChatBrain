@@ -1,19 +1,4 @@
 {
-  "name": "my-chat-brain-ai",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "migrate": "node --import tsx scripts/migrate.mjs",
-    "migrate-to-rxdb": "tsx scripts/migrate-to-rxdb.mjs",
-    "check": "node scripts/check-db.mjs",
-    "init": "node --import tsx scripts/init-db.js",
-    "seed": "node --import tsx scripts/seed-db.js",
-    "compile": "tsc --project tsconfig.json --noEmit"
-  },
   "dependencies": {
     "@adaline/anthropic": "^1.8.0",
     "@adaline/gateway": "^1.10.0",
@@ -22,6 +7,8 @@
     "@adaline/types": "^1.9.1",
     "@google/generative-ai": "^0.24.1",
     "@langchain/core": "^0.3.43",
+    "@nebula-db/adapter-localstorage": "^0.2.5",
+    "@nebula-db/core": "^0.2.5",
     "@phosphor-icons/react": "^2.1.7",
     "@pinecone-database/pinecone": "^5.1.1",
     "@radix-ui/react-popover": "^1.1.6",
@@ -50,7 +37,6 @@
     "react-markdown": "^9.0.1",
     "react-syntax-highlighter": "^15.5.0",
     "remark-gfm": "^4.0.0",
-    "rxdb": "^16.20.0",
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
@@ -72,5 +58,20 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.19.3",
     "typescript": "^5"
-  }
+  },
+  "name": "my-chat-brain-ai",
+  "private": true,
+  "scripts": {
+    "build": "rm -rf .next && next build && npm run seed",
+    "check": "node scripts/check-db.mjs",
+    "compile": "tsc --project tsconfig.json --noEmit",
+    "dev": "next dev",
+    "init": "node --import tsx scripts/init-db.js",
+    "lint": "next lint",
+    "migrate": "node --import tsx scripts/migrate.mjs",
+    "migrate-to-rxdb": "tsx scripts/migrate-to-rxdb.mjs",
+    "seed": "node --import tsx scripts/seed-db.js",
+    "start": "next start"
+  },
+  "version": "0.1.0"
 }

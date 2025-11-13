@@ -1,5 +1,7 @@
+import { db, collections } from '@/database/nebuladb';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { getNebulaDBHelper } from '@/database/nebuladb-helper';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { DecodedToken } from '@/types';
@@ -13,7 +15,7 @@ export async function GET() {
 export async function DELETE(request: NextRequest) {
   try {
     // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
+    const dbHelper = await getNebulaDBHelper();
 
     // Get token from cookie
     const cookieStore = cookies();
@@ -44,7 +46,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get the chat session to verify ownership
-    const session = await rxdbHelper.getChatSession(parsedSessionId);
+    const session = await dbHelper.getChatSession(parsedSessionId);
 
     if (!session) {
       return NextResponse.json({ error: 'Chat session not found' }, { status: 404 });
@@ -56,7 +58,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete the chat session (RxDB handles cascading deletes automatically)
-    await rxdbHelper.deleteChatSession(parsedSessionId);
+    await dbHelper.deleteChatSession(parsedSessionId);
 
     return NextResponse.json({ message: 'Chat session deleted successfully' });
   } catch (error) {

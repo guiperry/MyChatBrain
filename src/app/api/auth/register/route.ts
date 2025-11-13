@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { getNebulaDBHelper } from '@/database/nebuladb-helper';
 import { hashPassword, createToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
@@ -30,17 +30,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 6 characters long' }, { status: 400 });
     }
 
-    // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
+    // Get database helper
+    const dbHelper = await getNebulaDBHelper();
 
     // Check if username already exists
-    const existingUsername = await rxdbHelper.getUserByUsername(username.trim());
+    const existingUsername = await dbHelper.getUserByUsername(username.trim());
     if (existingUsername) {
       return NextResponse.json({ error: 'Username already taken' }, { status: 400 });
     }
 
     // Check if email already exists
-    const existingEmail = await rxdbHelper.getUserByEmail(email.trim().toLowerCase());
+    const existingEmail = await dbHelper.getUserByEmail(email.trim().toLowerCase());
     if (existingEmail) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
     }
@@ -49,13 +49,13 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await hashPassword(password);
 
     // Create user
-    const user = await rxdbHelper.createUser({
+    const user = await dbHelper.createUser({
       username: username.trim(),
       email: email.trim().toLowerCase(),
       password: hashedPassword
     });
 
-    const userId = parseInt(user.id);
+    const userId = user._id;
 
     // Create JWT token
     const token = createToken(userId);

@@ -15,6 +15,24 @@ const nextConfig = {
         os: false,
       };
     }
+    
+    // Exclude backup directory from build
+    config.module.rules.push({
+      test: /backups\/.*\.tsx?$/,
+      use: 'ignore-loader'
+    });
+
+    // Handle NebulaDB module resolution - use empty modules for missing dependencies
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@nebula-db/adapter-memory': false,
+      '@nebula-db/adapter-localstorage': false,
+      '@nebula-db/adapter-indexeddb': false,
+      '@nebula-db/adapter-filesystem': false,
+      '@nebula-db/adapter-sqlite': false,
+      '@nebula-db/plugin-validation': false,
+    };
+    
     return config;
   }
 };

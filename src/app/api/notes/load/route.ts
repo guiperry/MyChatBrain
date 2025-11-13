@@ -23,18 +23,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get RxDB helper instance
-    const rxdbHelper = await db();
+    // Get database helper instance
+    const dbHelper = await db();
 
     // Fetch notes
-    const notes = await rxdbHelper.getNotes(userId);
+    const notes = await dbHelper.getNotes(userId);
 
     console.log(`Found ${notes.length} notes`);
 
     // For debugging, log the first few notes with content details
     if (notes.length > 0) {
-      console.log('Sample notes:', notes.slice(0, 2).map(note => ({
-        id: note.id,
+      console.log('Sample notes:', notes.slice(0, 2).map((note: any) => ({
+        id: note._id,
         title: note.title,
         contentLength: note.content?.length,
         contentPreview: note.content?.substring(0, 100),
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      notes: notes.map(n => n.toJSON())
+      notes: notes.map((n: any) => n)
     });
   } catch (error: any) {
     console.error('Error loading notes:', error);

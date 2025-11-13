@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, CheckCircle2, AlertCircle, TrendingUp, Clock, Zap } from 'lucide-react';
+import { ChevronRight, CheckCircle2, AlertCircle, TrendingUp, Clock, Zap, X } from 'lucide-react';
 
 interface UserContext {
   stage: string;
@@ -21,7 +21,11 @@ interface AlgorithmicSystem {
   warningSigns: string;
 }
 
-const CreatorAlgorithmApp: React.FC = () => {
+interface CreatorAlgorithmProps {
+  onClose?: () => void;
+}
+
+const CreatorAlgorithmApp: React.FC<CreatorAlgorithmProps> = ({ onClose }) => {
   const [phase, setPhase] = useState<number>(1);
   const [context, setContext] = useState<UserContext>({
     stage: '',
@@ -33,6 +37,8 @@ const CreatorAlgorithmApp: React.FC = () => {
   const [systems, setSystems] = useState<AlgorithmicSystem[]>([]);
   const [selectedSystem, setSelectedSystem] = useState<number | null>(null);
   const [constraint, setConstraint] = useState<string>('');
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [aiInsights, setAiInsights] = useState<string>('');
 
   const analyzeContext = (ctx: UserContext): string => {
     const text = `${ctx.problem} ${ctx.kryptonite} ${ctx.timeSuck}`.toLowerCase();
@@ -45,6 +51,53 @@ const CreatorAlgorithmApp: React.FC = () => {
       return 'energy';
     } else {
       return 'clarity';
+    }
+  };
+
+  const getAiInsights = async (ctx: UserContext, systems: AlgorithmicSystem[]) => {
+    setIsAnalyzing(true);
+    try {
+      const systemNames = systems.map(s => s.name).join(', ');
+      const prompt = `As an AI productivity expert, analyze this creator's situation and provide strategic insights:
+
+Creator Context:
+- Stage: ${ctx.stage}
+- Core Problem: ${ctx.problem}
+- Kryptonite (avoidance behavior): ${ctx.kryptonite}
+- Energy Pattern: ${ctx.energy}
+- Time Sink: ${ctx.timeSuck}
+- Primary Constraint: ${constraint}
+
+Generated Systems: ${systemNames}
+
+Please provide:
+1. Which system would be most effective for this specific context and why
+2. Potential pitfalls to watch out for
+3. One key success metric beyond what's listed
+4. How to adapt the chosen system for maximum impact
+
+Keep it concise and actionable.`;
+
+      // Use the existing chat API route instead of direct Adeline import
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: prompt }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      setAiInsights(data.response);
+    } catch (error) {
+      console.error('Error getting AI insights:', error);
+      setAiInsights('Unable to generate AI insights at this time. Please proceed with your own analysis.');
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -176,28 +229,31 @@ const CreatorAlgorithmApp: React.FC = () => {
     setContext(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmitContext = () => {
+  const handleSubmitContext = async () => {
     if (Object.values(context).every(v => v.trim())) {
       const generatedSystems = generateSystems(context);
       setSystems(generatedSystems);
       setPhase(2);
+      
+      // Get AI insights after generating systems
+      await getAiInsights(context, generatedSystems);
     }
   };
 
   const renderPhase1 = () => (
-    <div className="space-y-6">
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-lg border-l-4 border-purple-500">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+    <div className="space-y-4 md:space-y-6">
+      <div className="bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 p-4 md:p-6 rounded-lg border-l-4 border-purple-500">
+        <h2 className="text-xl md:text-2xl font-bold text-[var(--textColor)] mb-2">
           Let's Cut Through the Noise
         </h2>
-        <p className="text-gray-700">
+        <p className="text-[var(--softTextColor)]">
           Answer these questions like you're venting to a friend who gets it. No corporate speak.
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3 md:space-y-4">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[var(--textColor)] mb-2">
             1. Stage & Stats
           </label>
           <input
@@ -205,12 +261,12 @@ const CreatorAlgorithmApp: React.FC = () => {
             placeholder='e.g., "Seed stage, 7 people, 10 months runway, B2B SaaS"'
             value={context.stage}
             onChange={(e) => handleInputChange('stage', e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full p-3 border border-[var(--bgSecondary)] rounded-lg bg-[var(--bgPrimary)] text-[var(--textColor)] focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-[var(--softTextColor)]"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[var(--textColor)] mb-2">
             2. The Real Problem
           </label>
           <textarea
@@ -218,12 +274,12 @@ const CreatorAlgorithmApp: React.FC = () => {
             value={context.problem}
             onChange={(e) => handleInputChange('problem', e.target.value)}
             rows={3}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full p-3 border border-[var(--bgSecondary)] rounded-lg bg-[var(--bgPrimary)] text-[var(--textColor)] focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-[var(--softTextColor)] resize-none"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[var(--textColor)] mb-2">
             3. Your Kryptonite
           </label>
           <textarea
@@ -231,12 +287,12 @@ const CreatorAlgorithmApp: React.FC = () => {
             value={context.kryptonite}
             onChange={(e) => handleInputChange('kryptonite', e.target.value)}
             rows={3}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full p-3 border border-[var(--bgSecondary)] rounded-lg bg-[var(--bgPrimary)] text-[var(--textColor)] focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-[var(--softTextColor)] resize-none"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[var(--textColor)] mb-2">
             4. Energy Reality
           </label>
           <input
@@ -244,12 +300,12 @@ const CreatorAlgorithmApp: React.FC = () => {
             placeholder="When do you do your best thinking? Morning person? Night owl?"
             value={context.energy}
             onChange={(e) => handleInputChange('energy', e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full p-3 border border-[var(--bgSecondary)] rounded-lg bg-[var(--bgPrimary)] text-[var(--textColor)] focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-[var(--softTextColor)]"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[var(--textColor)] mb-2">
             5. Current Time Suck
           </label>
           <textarea
@@ -257,7 +313,7 @@ const CreatorAlgorithmApp: React.FC = () => {
             value={context.timeSuck}
             onChange={(e) => handleInputChange('timeSuck', e.target.value)}
             rows={3}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full p-3 border border-[var(--bgSecondary)] rounded-lg bg-[var(--bgPrimary)] text-[var(--textColor)] focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-[var(--softTextColor)] resize-none"
           />
         </div>
       </div>
@@ -265,7 +321,7 @@ const CreatorAlgorithmApp: React.FC = () => {
       <button
         onClick={handleSubmitContext}
         disabled={!Object.values(context).every(v => v.trim())}
-        className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+        className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
       >
         Generate My Algorithmic Systems
         <ChevronRight size={20} />
@@ -274,44 +330,44 @@ const CreatorAlgorithmApp: React.FC = () => {
   );
 
   const renderPhase2 = () => (
-    <div className="space-y-6">
-      <div className="bg-blue-50 p-6 rounded-lg border-l-4 border-blue-500">
-        <h2 className="text-xl font-bold text-gray-900 mb-2">
+    <div className="space-y-4 md:space-y-6">
+      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 md:p-6 rounded-lg border-l-4 border-blue-500">
+        <h2 className="text-lg md:text-xl font-bold text-[var(--textColor)] mb-2">
           Analysis Complete
         </h2>
-        <p className="text-gray-700">
-          Based on your responses, your primary constraint is: <strong className="text-blue-700 capitalize">{constraint}</strong>
+        <p className="text-[var(--softTextColor)]">
+          Based on your responses, your primary constraint is: <strong className="text-blue-600 dark:text-blue-400 capitalize">{constraint}</strong>
         </p>
-        <p className="text-gray-600 mt-2 text-sm">
+        <p className="text-[var(--softTextColor)] mt-2 text-sm">
           I've generated 5 distinct prioritization systems optimized for your situation.
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3 md:space-y-4">
         {systems.map((system, idx) => (
           <div
             key={idx}
-            className={`border-2 rounded-lg p-5 cursor-pointer transition-all ${
+            className={`border-2 rounded-lg p-4 md:p-5 cursor-pointer transition-all ${
               selectedSystem === idx
-                ? 'border-purple-500 bg-purple-50'
-                : 'border-gray-200 hover:border-gray-300 bg-white'
+                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                : 'border-[var(--bgSecondary)] hover:border-gray-300 bg-[var(--bgPrimary)]'
             }`}
             onClick={() => setSelectedSystem(selectedSystem === idx ? null : idx)}
           >
             <div className="flex justify-between items-start mb-3">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">{system.name}</h3>
-                <p className="text-sm text-gray-600">{system.philosophy}</p>
+                <h3 className="text-base md:text-lg font-bold text-[var(--textColor)]">{system.name}</h3>
+                <p className="text-sm text-[var(--softTextColor)]">{system.philosophy}</p>
               </div>
-              <div className="flex gap-2">
-                <div className="flex items-center gap-1 bg-green-100 px-2 py-1 rounded text-xs font-semibold text-green-700">
+              <div className="flex gap-2 flex-wrap">
+                <div className="flex items-center gap-1 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded text-xs font-semibold text-green-700 dark:text-green-400">
                   <TrendingUp size={14} />
                   {system.leverageScore}/10
                 </div>
                 <div className={`px-2 py-1 rounded text-xs font-semibold ${
-                  system.cognitiveLoad === 'Low' ? 'bg-blue-100 text-blue-700' :
-                  system.cognitiveLoad === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-red-100 text-red-700'
+                  system.cognitiveLoad === 'Low' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
+                  system.cognitiveLoad === 'Medium' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
+                  'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                 }`}>
                   {system.cognitiveLoad} Load
                 </div>
@@ -319,13 +375,13 @@ const CreatorAlgorithmApp: React.FC = () => {
             </div>
 
             {selectedSystem === idx && (
-              <div className="mt-4 space-y-4 animate-fadeIn">
+              <div className="mt-4 space-y-3 md:space-y-4 animate-fadeIn">
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <h4 className="font-semibold text-[var(--textColor)] mb-2 flex items-center gap-2">
                     <Zap size={16} className="text-purple-600" />
                     The Algorithm
                   </h4>
-                  <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700">
+                  <ol className="list-decimal list-inside space-y-1 text-sm text-[var(--softTextColor)]">
                     {system.algorithm.map((step, i) => (
                       <li key={i}>{step}</li>
                     ))}
@@ -333,11 +389,11 @@ const CreatorAlgorithmApp: React.FC = () => {
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <h4 className="font-semibold text-[var(--textColor)] mb-2 flex items-center gap-2">
                     <Clock size={16} className="text-purple-600" />
                     Daily Ritual
                   </h4>
-                  <ul className="space-y-1 text-sm text-gray-700">
+                  <ul className="space-y-1 text-sm text-[var(--softTextColor)]">
                     {system.dailyRitual.map((ritual, i) => (
                       <li key={i} className="flex items-start gap-2">
                         <CheckCircle2 size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
@@ -347,23 +403,23 @@ const CreatorAlgorithmApp: React.FC = () => {
                   </ul>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-green-50 p-3 rounded">
-                    <h4 className="font-semibold text-gray-900 text-sm mb-1">Success Metric</h4>
-                    <p className="text-sm text-gray-700">{system.successMetric}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                  <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded">
+                    <h4 className="font-semibold text-[var(--textColor)] text-sm mb-1">Success Metric</h4>
+                    <p className="text-sm text-[var(--softTextColor)]">{system.successMetric}</p>
                   </div>
-                  <div className="bg-blue-50 p-3 rounded">
-                    <h4 className="font-semibold text-gray-900 text-sm mb-1">When to Use</h4>
-                    <p className="text-sm text-gray-700">{system.whenToUse}</p>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded">
+                    <h4 className="font-semibold text-[var(--textColor)] text-sm mb-1">When to Use</h4>
+                    <p className="text-sm text-[var(--softTextColor)]">{system.whenToUse}</p>
                   </div>
                 </div>
 
-                <div className="bg-red-50 p-3 rounded border-l-2 border-red-300">
-                  <h4 className="font-semibold text-gray-900 text-sm mb-1 flex items-center gap-2">
+                <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded border-l-2 border-red-300">
+                  <h4 className="font-semibold text-[var(--textColor)] text-sm mb-1 flex items-center gap-2">
                     <AlertCircle size={16} className="text-red-600" />
                     Warning Signs
                   </h4>
-                  <p className="text-sm text-gray-700">{system.warningSigns}</p>
+                  <p className="text-sm text-[var(--softTextColor)]">{system.warningSigns}</p>
                 </div>
 
                 <button
@@ -377,34 +433,56 @@ const CreatorAlgorithmApp: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* AI Insights Section */}
+      {aiInsights && (
+        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-4 md:p-6 rounded-lg border-l-4 border-indigo-500">
+          <h3 className="text-base md:text-lg font-bold text-[var(--textColor)] mb-3 flex items-center gap-2">
+            <Zap size={20} className="text-indigo-600" />
+            AI Strategic Insights
+          </h3>
+          <div className="text-[var(--softTextColor)] whitespace-pre-wrap text-sm">
+            {aiInsights}
+          </div>
+        </div>
+      )}
+
+      {isAnalyzing && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border-l-4 border-yellow-500">
+          <p className="text-[var(--softTextColor)] flex items-center gap-2">
+            <Clock size={16} />
+            Analyzing your context with AI... This may take a moment.
+          </p>
+        </div>
+      )}
     </div>
   );
 
   const renderPhase3 = () => {
     const chosen = selectedSystem !== null ? systems[selectedSystem] : systems[0];
-    
+
     return (
-      <div className="space-y-6">
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-lg border-l-4 border-green-500">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <div className="space-y-4 md:space-y-6">
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 md:p-6 rounded-lg border-l-4 border-green-500">
+          <h2 className="text-xl md:text-2xl font-bold text-[var(--textColor)] mb-2">
             Your Implementation Guide
           </h2>
-          <p className="text-gray-700">
+          <p className="text-[var(--softTextColor)]">
             You've chosen: <strong>{chosen.name}</strong>
           </p>
         </div>
 
-        <div className="bg-white border-2 border-gray-200 rounded-lg p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Your Personal Rotation Schedule</h3>
-          <div className="space-y-3 text-gray-700">
+        <div className="bg-[var(--bgPrimary)] border-2 border-[var(--bgSecondary)] rounded-lg p-4 md:p-6">
+          <h3 className="text-lg md:text-xl font-bold text-[var(--textColor)] mb-4">Your Personal Rotation Schedule</h3>
+          <div className="space-y-3 text-[var(--softTextColor)]">
             <p><strong>Week 1-2:</strong> Start with {chosen.name} to build momentum and address your {constraint} constraint</p>
             <p><strong>Week 3-4:</strong> Continue if working, or try {systems[(selectedSystem || 0) + 1 < systems.length ? (selectedSystem || 0) + 1 : 0].name} if you need a different approach</p>
             <p><strong>Monthly review:</strong> Assess which system created most leverage and double down</p>
           </div>
         </div>
 
-        <div className="bg-white border-2 border-gray-200 rounded-lg p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Integration Checklist</h3>
+        <div className="bg-[var(--bgPrimary)] border-2 border-[var(--bgSecondary)] rounded-lg p-4 md:p-6">
+          <h3 className="text-lg md:text-xl font-bold text-[var(--textColor)] mb-4">Integration Checklist</h3>
           <div className="space-y-2">
             {[
               "Block tomorrow's calendar for your chosen system",
@@ -413,27 +491,27 @@ const CreatorAlgorithmApp: React.FC = () => {
               "Track one key metric for 2 weeks",
               "Schedule system rotation reminder in your calendar"
             ].map((item, idx) => (
-              <label key={idx} className="flex items-start gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
+              <label key={idx} className="flex items-start gap-3 p-2 hover:bg-[var(--bgSecondary)] rounded cursor-pointer">
                 <input type="checkbox" className="mt-1" />
-                <span className="text-gray-700">{item}</span>
+                <span className="text-[var(--softTextColor)]">{item}</span>
               </label>
             ))}
           </div>
         </div>
 
-        <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6">
-          <h3 className="text-lg font-bold text-red-900 mb-2 flex items-center gap-2">
+        <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 rounded-lg p-4 md:p-6">
+          <h3 className="text-base md:text-lg font-bold text-red-900 dark:text-red-400 mb-2 flex items-center gap-2">
             <AlertCircle size={20} />
             Your Biggest Risk
           </h3>
-          <p className="text-gray-700">
+          <p className="text-[var(--softTextColor)]">
             Based on your kryptonite ({context.kryptonite.slice(0, 50)}...), you're most likely to fall back into fake work when the strategic decisions get uncomfortable. The moment you catch yourself doing "{context.kryptonite.split(' ')[0]}" instead of your prioritized work, that's your cue to get back on track.
           </p>
         </div>
 
-        <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-6">
-          <h3 className="text-lg font-bold text-purple-900 mb-2">The One Thing to Remember</h3>
-          <p className="text-gray-700 text-lg">
+        <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 rounded-lg p-4 md:p-6">
+          <h3 className="text-base md:text-lg font-bold text-purple-900 dark:text-purple-400 mb-2">The One Thing to Remember</h3>
+          <p className="text-[var(--softTextColor)] text-base md:text-lg">
             The best prioritization system is the one you actually use. Start tomorrow morning. Just one system. Just two weeks. Track the metric. Then decide.
           </p>
         </div>
@@ -454,24 +532,35 @@ const CreatorAlgorithmApp: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
+    <div className="h-full bg-[var(--bg)] p-4 md:p-6 overflow-y-auto">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
-            Creator Algorithmic System™
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Cut through productivity theater. Focus on what actually moves the needle.
-          </p>
+        <div className="flex justify-between items-center mb-6 md:mb-8">
+          <div className="text-center flex-1">
+            <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-[var(--textColor)] mb-2">
+              Creator Algorithmic System™
+            </h1>
+            <p className="text-[var(--softTextColor)] text-base md:text-lg">
+              Cut through productivity theater. Focus on what actually moves the needle.
+            </p>
+          </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="flex-shrink-0 p-2 text-[var(--softTextColor)] hover:text-[var(--textColor)] hover:bg-[var(--bgSecondary)] rounded-full transition-colors"
+              aria-label="Close Creator Algorithm"
+            >
+              <X size={24} />
+            </button>
+          )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-xl p-6 md:p-8">
+        <div className="bg-[var(--bgPrimary)] border border-[var(--bgSecondary)] rounded-xl shadow-xl p-4 md:p-6 lg:p-8">
           {phase === 1 && renderPhase1()}
           {phase === 2 && renderPhase2()}
           {phase === 3 && renderPhase3()}
         </div>
 
-        <div className="text-center mt-6 text-sm text-gray-500">
+        <div className="text-center mt-4 md:mt-6 text-sm text-[var(--softTextColor)]">
           Phase {phase} of 3 | Inspired by @godofprompt
         </div>
       </div>

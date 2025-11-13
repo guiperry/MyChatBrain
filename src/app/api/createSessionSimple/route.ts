@@ -1,5 +1,7 @@
+import { db, collections } from '@/database/nebuladb';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { getNebulaDBHelper } from '@/database/nebuladb-helper';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { DecodedToken } from '@/types';
@@ -14,7 +16,7 @@ export async function POST(request: NextRequest) {
     if (token) {
       const decoded = verifyToken(token) as DecodedToken | null;
       if (decoded) {
-        userId = decoded.userId;
+        userId = Number(decoded.userId);
       }
     }
 
@@ -30,10 +32,10 @@ export async function POST(request: NextRequest) {
 
     try {
       // Get RxDB helper instance
-      const rxdbHelper = await getRxDBHelper();
+      const dbHelper = await getNebulaDBHelper();
 
       // Create the chat session using RxDB helper
-      const session = await rxdbHelper.createChatSession({
+      const session = await dbHelper.createChatSession({
         title,
         user_id: userId
       });

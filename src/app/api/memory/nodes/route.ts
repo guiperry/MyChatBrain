@@ -1,5 +1,7 @@
+import { db, collections } from '@/database/nebuladb';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { getNebulaDBHelper } from '@/database/nebuladb-helper';
 import { getCurrentUser } from '@/lib/auth';
 import { storeNodeVector, deleteNodeVector } from '@/lib/memoryVectors';
 
@@ -7,7 +9,7 @@ import { storeNodeVector, deleteNodeVector } from '@/lib/memoryVectors';
 export async function GET(req: NextRequest) {
   try {
     // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
+    const dbHelper = await getNebulaDBHelper();
 
     // Get the current user session
     const user = await getCurrentUser(req);
@@ -26,11 +28,11 @@ export async function GET(req: NextRequest) {
     let nodes;
     if (nodeId) {
       // Get a specific node
-      const node = await rxdbHelper.getMemoryNode(parseInt(nodeId));
+      const node = await dbHelper.getMemoryNode(parseInt(nodeId));
       nodes = node ? [node] : [];
     } else {
       // Get all nodes for the user
-      nodes = await rxdbHelper.getMemoryNodes(userId);
+      nodes = await dbHelper.getMemoryNodes(userId);
     }
 
     // Format the response
@@ -60,7 +62,7 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
+    const dbHelper = await getNebulaDBHelper();
 
     // Get the current user session
     const user = await getCurrentUser(req);
@@ -81,7 +83,7 @@ export async function PUT(req: NextRequest) {
     }
 
     // Get the existing node
-    const existingNode = await rxdbHelper.getMemoryNode(parseInt(id));
+    const existingNode = await dbHelper.getMemoryNode(parseInt(id));
     if (!existingNode) {
       return NextResponse.json(
         { success: false, error: 'Node not found' },
@@ -113,7 +115,7 @@ export async function PUT(req: NextRequest) {
     }
 
     // Update the node (RxDB handles the ID and timestamps automatically)
-    const updatedNode = await rxdbHelper.updateMemoryNode(parseInt(id), updateData);
+    const updatedNode = await dbHelper.updateMemoryNode(parseInt(id), updateData);
 
     return NextResponse.json({
       success: true,
@@ -139,7 +141,7 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
+    const dbHelper = await getNebulaDBHelper();
 
     // Get the current user session
     const user = await getCurrentUser(req);
@@ -158,7 +160,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Verify that the node exists
-    const existingNode = await rxdbHelper.getMemoryNode(parseInt(nodeId));
+    const existingNode = await dbHelper.getMemoryNode(parseInt(nodeId));
     if (!existingNode) {
       return NextResponse.json(
         { success: false, error: 'Node not found' },
@@ -167,7 +169,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Delete the node
-    await rxdbHelper.deleteMemoryNode(parseInt(nodeId));
+    await dbHelper.deleteMemoryNode(parseInt(nodeId));
 
     // Also delete from vector database
     await deleteNodeVector(nodeId);

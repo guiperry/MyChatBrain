@@ -137,33 +137,33 @@ const PersonaAnalyticsSidebar: React.FC<PersonaAnalyticsSidebarProps> = ({ isOpe
   const getLevelColor = (level: string): string => {
     switch (level) {
       case 'High':
-        return 'bg-red-100 text-red-700';
+        return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
       case 'Medium':
-        return 'bg-yellow-100 text-yellow-700';
+        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400';
       case 'Growing':
-        return 'bg-green-100 text-green-700';
+        return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-[var(--bgSecondary)] text-[var(--softTextColor)]';
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed top-0 right-0 z-50 w-80 bg-white border-l border-gray-200 h-screen overflow-y-auto shadow-lg transform transition-transform duration-300 ease-in-out">
+    <div className="fixed top-0 right-0 z-[70] w-80 bg-[var(--bgPrimary)] border-l border-[var(--bgSecondary)] h-screen overflow-y-auto shadow-lg transform transition-transform duration-300 ease-in-out">
       {/* Header with close button */}
       <div className="mb-6 p-6 pb-0">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Persona Analytics</h2>
-            <p className="text-xs text-gray-500 mt-1">Real-time insights and knowledge mapping</p>
+            <h2 className="text-lg font-semibold text-[var(--textColor)]">Persona Analytics</h2>
+            <p className="text-xs text-[var(--softTextColor)] mt-1">Real-time insights and knowledge mapping</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+            className="p-1 hover:bg-[var(--bgSecondary)] rounded-md transition-colors"
             aria-label="Close persona analytics"
           >
-            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-[var(--softTextColor)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -174,17 +174,17 @@ const PersonaAnalyticsSidebar: React.FC<PersonaAnalyticsSidebarProps> = ({ isOpe
       {loading && (
         <div className="flex items-center justify-center py-8 px-6">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <span className="ml-2 text-sm text-gray-600">Loading analytics...</span>
+          <span className="ml-2 text-sm text-[var(--softTextColor)]">Loading analytics...</span>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 mx-6">
-          <p className="text-sm text-red-700">Failed to load persona data: {error}</p>
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 rounded-lg p-4 mb-6 mx-6">
+          <p className="text-sm text-red-700 dark:text-red-400">Failed to load persona data: {error}</p>
           <button
             onClick={fetchPersonaData}
-            className="mt-2 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs rounded transition-colors"
+            className="mt-2 px-3 py-1 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 text-xs rounded transition-colors"
           >
             Retry
           </button>
@@ -198,14 +198,14 @@ const PersonaAnalyticsSidebar: React.FC<PersonaAnalyticsSidebarProps> = ({ isOpe
           <div className="mb-6 px-6">
             <div className="flex items-center gap-2 mb-3">
               <Heart className="w-4 h-4 text-red-500" fill="currentColor" />
-              <h3 className="text-sm font-semibold text-gray-900">Sentiment Analysis</h3>
+              <h3 className="text-sm font-semibold text-[var(--textColor)]">Sentiment Analysis</h3>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-600">Positive</span>
+                <span className="text-xs text-[var(--softTextColor)]">Positive</span>
                 <span className="text-xs font-semibold text-green-600">{sentimentScore}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-[var(--bgSecondary)] rounded-full h-2">
                 <div
                   className="bg-green-500 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${sentimentScore}%` }}
@@ -218,12 +218,12 @@ const PersonaAnalyticsSidebar: React.FC<PersonaAnalyticsSidebarProps> = ({ isOpe
           <div className="mb-6 px-6">
             <div className="flex items-center gap-2 mb-3">
               <MessageCircle className="w-4 h-4 text-blue-500" />
-              <h3 className="text-sm font-semibold text-gray-900">Interest Profile</h3>
+              <h3 className="text-sm font-semibold text-[var(--textColor)]">Interest Profile</h3>
             </div>
             <div className="space-y-2">
               {interests.map((interest, index) => (
                 <div key={index} className="flex justify-between items-center">
-                  <span className="text-xs text-gray-700">{interest.name}</span>
+                  <span className="text-xs text-[var(--softTextColor)]">{interest.name}</span>
                   <span className={`text-xs px-2 py-1 rounded ${getLevelColor(interest.level)}`}>
                     {interest.level}
                   </span>
@@ -236,20 +236,20 @@ const PersonaAnalyticsSidebar: React.FC<PersonaAnalyticsSidebarProps> = ({ isOpe
           <div className="mb-6 px-6">
             <div className="flex items-center gap-2 mb-3">
               <Target className="w-4 h-4 text-red-500" />
-              <h3 className="text-sm font-semibold text-gray-900">Active Goals</h3>
+              <h3 className="text-sm font-semibold text-[var(--textColor)]">Active Goals</h3>
             </div>
             <div className="space-y-4">
               {goals.map((goal, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-3">
+                <div key={index} className="border border-[var(--bgSecondary)] rounded-lg p-3 bg-[var(--bgPrimary)]">
                   <div className="flex justify-between items-start mb-2">
-                    <h4 className="text-xs font-medium text-gray-900">{goal.title}</h4>
+                    <h4 className="text-xs font-medium text-[var(--textColor)]">{goal.title}</h4>
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-500">{goal.status}</span>
-                      <span className="text-xs text-gray-700">{goal.progress}%</span>
+                      <span className="text-xs text-[var(--softTextColor)]">{goal.status}</span>
+                      <span className="text-xs text-[var(--softTextColor)]">{goal.progress}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                    <div className="w-full bg-[var(--bgSecondary)] rounded-full h-1.5">
                       <div
                         className="bg-purple-500 h-1.5 rounded-full transition-all duration-300"
                         style={{ width: `${goal.progress}%` }}
@@ -265,16 +265,16 @@ const PersonaAnalyticsSidebar: React.FC<PersonaAnalyticsSidebarProps> = ({ isOpe
           <div className="mb-6 px-6">
             <div className="flex items-center gap-2 mb-3">
               <User className="w-4 h-4 text-purple-500" />
-              <h3 className="text-sm font-semibold text-gray-900">Personality Insights</h3>
+              <h3 className="text-sm font-semibold text-[var(--textColor)]">Personality Insights</h3>
             </div>
             <div className="space-y-3">
               {personalityTraits.map((trait, index) => (
                 <div key={index}>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs text-gray-700">{trait.trait}</span>
-                    <span className="text-xs font-semibold text-gray-900">{trait.level}</span>
+                    <span className="text-xs text-[var(--softTextColor)]">{trait.trait}</span>
+                    <span className="text-xs font-semibold text-[var(--textColor)]">{trait.level}</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                  <div className="w-full bg-[var(--bgSecondary)] rounded-full h-1.5">
                     <div
                       className="bg-purple-500 h-1.5 rounded-full transition-all duration-300"
                       style={{
@@ -291,13 +291,13 @@ const PersonaAnalyticsSidebar: React.FC<PersonaAnalyticsSidebarProps> = ({ isOpe
           <div className="px-6 pb-6">
             <div className="flex items-center gap-2 mb-3">
               <Lightbulb className="w-4 h-4 text-yellow-500" />
-              <h3 className="text-sm font-semibold text-gray-900">Recent Ideas</h3>
+              <h3 className="text-sm font-semibold text-[var(--textColor)]">Recent Ideas</h3>
             </div>
             <div className="space-y-3">
               {recentIdeas.map((idea, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-3">
-                  <p className="text-xs text-gray-900 mb-1">{idea.title}</p>
-                  <p className="text-xs text-gray-400">{idea.timestamp}</p>
+                <div key={index} className="border border-[var(--bgSecondary)] rounded-lg p-3 bg-[var(--bgPrimary)]">
+                  <p className="text-xs text-[var(--textColor)] mb-1">{idea.title}</p>
+                  <p className="text-xs text-[var(--softTextColor)]">{idea.timestamp}</p>
                 </div>
               ))}
             </div>

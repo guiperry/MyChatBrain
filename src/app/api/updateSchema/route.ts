@@ -1,21 +1,23 @@
+import { db, collections } from '@/database/nebuladb';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDB } from '@/db/rxdb';
+import { getNebulaDBHelper } from '@/database/nebuladb-helper';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('Checking RxDB database status...');
+    console.log('Checking NebulaDB database status...');
 
-    // Initialize RxDB to ensure collections exist
-    const db = await getRxDB();
+    // Initialize NebulaDB to ensure collections exist
+    const dbHelper = await getNebulaDBHelper();
 
-    console.log('RxDB database initialized successfully');
+    console.log('NebulaDB database initialized successfully');
 
     return NextResponse.json({
-      message: 'RxDB database initialized successfully',
-      collections: Object.keys(db.collections)
+      message: 'NebulaDB database initialized successfully',
+      collections: Object.keys(collections)
     }, { status: 200 });
   } catch (error) {
-    console.error('Error initializing RxDB database:', error);
+    console.error('Error initializing NebulaDB database:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

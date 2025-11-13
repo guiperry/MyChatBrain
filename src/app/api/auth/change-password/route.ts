@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { verifyToken, comparePasswords, hashPassword } from '@/lib/auth';
 import { cookies } from 'next/headers';
-import { DecodedToken, DbUser } from '@/types';
-import { typedGet, typedRun } from '@/db/types';
+import { DecodedToken } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,12 +28,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Get RxDB helper instance
+    const NebulaDBHelper = await db();
+
     // Get user with password
-    const user = typedGet<DbUser>(
-      db,
-      'SELECT * FROM users WHERE id = ?',
-      [decoded.userId]
-    );
+    const user = await NebulaDBHelper.getUser(Number(decoded.userId));
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -49,13 +47,10 @@ export async function POST(request: NextRequest) {
     // Hash new password
     const hashedPassword = await hashPassword(newPassword);
 
-    // Update password
-    const timestamp = new Date().toISOString();
-    typedRun(
-      db,
-      'UPDATE users SET password = ?, updated_at = ? WHERE id = ?',
-      [hashedPassword, timestamp, decoded.userId]
-    );
+    // Update password using RxDB
+    await NebulaDBHelper.updateUser(Number(decoded.userId).toString(), {
+      password: hashedPassword
+    });
 
     return NextResponse.json({ message: 'Password updated successfully' });
   } catch (error) {

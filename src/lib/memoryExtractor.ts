@@ -118,7 +118,7 @@ export async function saveToMemoryGraph(
   userId: number
 ) {
   // Get RxDB helper instance
-  const rxdbHelper = await db();
+  const NebulaDBHelper = await db();
 
   // Map to store entity text to node ID
   const entityMap: Record<string, number> = {};
@@ -126,7 +126,7 @@ export async function saveToMemoryGraph(
   // Save entities
   for (const entity of entities) {
     // Check if the entity already exists
-    const existingNodes = await rxdbHelper.findMemoryNode(
+    const existingNodes = await NebulaDBHelper.findMemoryNode(
       entity.text,
       entity.type as 'keyword' | 'entity' | 'message' | 'topic' | 'custom',
       userId
@@ -137,12 +137,12 @@ export async function saveToMemoryGraph(
       // Update the existing node
       const existingNode = existingNodes[0];
       nodeId = parseInt(existingNode.id);
-      await rxdbHelper.updateMemoryNode(nodeId, {
+      await NebulaDBHelper.updateMemoryNode(nodeId, {
         metadata: entity.metadata ? JSON.stringify(entity.metadata) : ''
       });
     } else {
       // Insert a new node
-      const newNode = await rxdbHelper.createMemoryNode({
+      const newNode = await NebulaDBHelper.createMemoryNode({
         label: entity.text,
         type: entity.type as 'keyword' | 'entity' | 'message' | 'topic' | 'custom',
         user_id: userId,
@@ -166,7 +166,7 @@ export async function saveToMemoryGraph(
     }
 
     // Check if the relationship already exists
-    const existingEdges = await rxdbHelper.findMemoryEdge(
+    const existingEdges = await NebulaDBHelper.findMemoryEdge(
       sourceId,
       targetId,
       relationship.relation as 'related_to' | 'mentioned_in' | 'part_of' | 'temporal' | 'custom'
@@ -183,7 +183,7 @@ export async function saveToMemoryGraph(
       });
     } else {
       // Insert a new edge
-      await rxdbHelper.createMemoryEdge({
+      await NebulaDBHelper.createMemoryEdge({
         source_id: sourceId,
         target_id: targetId,
         relation: relationship.relation as 'related_to' | 'mentioned_in' | 'part_of' | 'temporal' | 'custom',

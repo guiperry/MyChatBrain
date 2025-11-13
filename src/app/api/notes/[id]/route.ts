@@ -1,8 +1,9 @@
+import { db, collections } from '@/database/nebuladb';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { getNebulaDBHelper } from '@/database/nebuladb-helper';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
-import { Notes } from '@/db/schema';
 
 // GET /api/notes/[id] - Get a specific note by ID
 export async function GET(
@@ -20,10 +21,8 @@ export async function GET(
     console.log(`Fetching note with ID: ${noteId}`);
 
     // Fetch the note
-    const note = db.get(
-      'SELECT * FROM notes WHERE id = ?',
-      [noteId]
-    ) as Notes | undefined;
+    const dbHelper = await getNebulaDBHelper();
+    const note = await dbHelper.getNote(noteId);
     console.log('Fetched note:', note);
 
     if (!note) {
@@ -72,10 +71,8 @@ export async function DELETE(
     console.log('Checking for note with ID:', noteId);
 
     // Check if the note exists
-    const existingNote = db.get(
-      'SELECT * FROM notes WHERE id = ?',
-      [noteId]
-    ) as Notes | undefined;
+    const dbHelper = await getNebulaDBHelper();
+    const existingNote = await dbHelper.getNote(noteId);
     console.log('Note found:', existingNote);
 
     if (!existingNote) {
@@ -89,11 +86,11 @@ export async function DELETE(
 
     // Delete the note
     console.log('Deleting note from database');
-    const deleteResult = db.run('DELETE FROM notes WHERE id = ?', [noteId]);
-    console.log('Delete result:', deleteResult);
+    await dbHelper.deleteNote(noteId);
+    console.log('Note deleted successfully');
 
     // Verify deletion
-    const checkDeleted = db.get('SELECT * FROM notes WHERE id = ?', [noteId]);
+    const checkDeleted = await dbHelper.getNote(noteId);
     console.log('Note after delete:', checkDeleted);
 
     console.log('Returning success response');

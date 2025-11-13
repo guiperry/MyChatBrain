@@ -1,4 +1,4 @@
-import { db } from '@/db';
+import { db, collections } from '@/database/nebuladb';
 import type { PersonalityTraits } from '@/db/schema';
 
 /**
@@ -97,7 +97,7 @@ export class PersonalityModeler {
 
       for (const trait of newTraits) {
         // Check if trait already exists
-        const existing = db.get(
+        const existing = await db.get(
           'SELECT * FROM personality_traits WHERE user_id = ? AND trait_label = ?',
           [userId, trait.trait]
         ) as PersonalityTraits | undefined;
@@ -109,32 +109,32 @@ export class PersonalityModeler {
             (existing.percentile * existing.evidence_count + trait.percentile * trait.evidenceCount) / newEvidenceCount
           );
 
-          db.run(
-            'UPDATE personality_traits SET percentile = ?, evidence_count = ?, last_updated = CURRENT_TIMESTAMP WHERE id = ?',
-            [blendedPercentile, newEvidenceCount, existing.id]
-          );
-
-          updatedTraits.push({
+          const updatedTrait = {
             ...existing,
             percentile: blendedPercentile,
             evidence_count: newEvidenceCount,
             last_updated: new Date().toISOString()
-          });
-        } else {
-          // Create new trait
-          const insertResult = db.run(
-            'INSERT INTO personality_traits (user_id, trait_label, percentile, evidence_count) VALUES (?, ?, ?, ?)',
-            [userId, trait.trait, trait.percentile, trait.evidenceCount]
+          };
+
+          await collections.personality_traits.update(
+            { _id: existing.id },
+            { $set: updatedTrait }
           );
 
-          const inserted = db.get(
-            'SELECT * FROM personality_traits WHERE id = ?',
-            [insertResult.lastInsertRowid]
-          ) as PersonalityTraits;
+          updatedTraits.push(updatedTrait);
+        } else {
+          // Create new trait
+          const personalityTrait = {
+            user_id: userId,
+            trait_label: trait.trait,
+            percentile: trait.percentile,
+            evidence_count: trait.evidenceCount,
+            last_updated: new Date().toISOString(),
+            created_at: new Date().toISOString()
+          };
 
-          if (inserted) {
-            updatedTraits.push(inserted);
-          }
+          const inserted = await collections.personality_traits.insert(personalityTrait);
+          updatedTraits.push(inserted as PersonalityTraits);
         }
       }
 
@@ -150,7 +150,7 @@ export class PersonalityModeler {
    */
   static async getTraits(userId: number): Promise<PersonalityTraits[]> {
     try {
-      const traits = db.all(
+      const traits = await db.all(
         'SELECT * FROM personality_traits WHERE user_id = ? ORDER BY evidence_count DESC',
         [userId]
       ) as PersonalityTraits[];

@@ -1,5 +1,4 @@
-import { db } from '@/db';
-import type { PersonaSessions, PersonaMessages } from '@/db/schema';
+import { collections } from '@/database/nebuladb';
 import { SentimentAnalyzer } from './sentimentAnalyzer';
 import { InterestProfiler } from './interestProfiler';
 import { GoalTracker } from './goalTracker';
@@ -274,48 +273,10 @@ export class PersonaOrchestrator {
     totalSamples?: number;
   } | null> {
     try {
-      // TODO: Add sentiment_metrics table to RxDB schema
-      const latest = db.get(
-        `SELECT sm.polarity, sm.score, sm.model_version, sm.created_at
-         FROM sentiment_metrics sm
-         JOIN persona_messages pm ON sm.message_id = pm.id
-         JOIN persona_sessions ps ON pm.session_id = ps.id
-         WHERE ps.user_id = ?
-         ORDER BY sm.created_at DESC LIMIT 1`,
-        [userId]
-      ) as {
-        polarity: number;
-        score: number;
-        model_version: string;
-        created_at: string;
-      } | undefined;
-
-      const aggregate = db.get(
-        `SELECT AVG(sm.polarity) AS avg_polarity, AVG(sm.score) AS avg_score, COUNT(*) AS total_samples
-         FROM sentiment_metrics sm
-         JOIN persona_messages pm ON sm.message_id = pm.id
-         JOIN persona_sessions ps ON pm.session_id = ps.id
-         WHERE ps.user_id = ?`,
-        [userId]
-      ) as {
-        avg_polarity: number | null;
-        avg_score: number | null;
-        total_samples: number;
-      } | undefined;
-
-      if (!latest && (!aggregate || !aggregate.total_samples)) {
-        return null;
-      }
-
-      return {
-        polarity: latest?.polarity ?? (aggregate?.avg_polarity ?? 0),
-        score: latest?.score ?? (aggregate?.avg_score ?? 0),
-        modelVersion: latest?.model_version ?? 'unknown',
-        updatedAt: latest?.created_at,
-        averagePolarity: aggregate?.avg_polarity ?? latest?.polarity ?? 0,
-        averageScore: aggregate?.avg_score ?? latest?.score ?? 0,
-        totalSamples: aggregate?.total_samples ?? (latest ? 1 : 0)
-      };
+      // TODO: Implement sentiment metrics with Nebula DB collections
+      // For now, return null as the tables haven't been migrated yet
+      console.log('Sentiment metrics not yet implemented with Nebula DB');
+      return null;
     } catch (error) {
       console.error('Error getting sentiment summary:', error);
       return null;
@@ -327,14 +288,10 @@ export class PersonaOrchestrator {
    */
   private static async getRecentErrors(userId: number, limit: number = 5): Promise<any[]> {
     try {
-      const errors = db.all(
-        `SELECT e.* FROM error_events e
-         JOIN persona_sessions ps ON e.session_id = ps.id
-         WHERE ps.user_id = ?
-         ORDER BY e.created_at DESC LIMIT ?`,
-        [userId, limit]
-      );
-      return errors;
+      // TODO: Implement error events with Nebula DB collections
+      // For now, return empty array as the tables haven't been migrated yet
+      console.log('Error events not yet implemented with Nebula DB');
+      return [];
     } catch (error) {
       console.error('Error getting recent errors:', error);
       return [];
@@ -346,14 +303,10 @@ export class PersonaOrchestrator {
    */
   private static async getRecentToolUsage(userId: number, limit: number = 5): Promise<any[]> {
     try {
-      const usage = db.all(
-        `SELECT tu.* FROM tool_usages tu
-         JOIN persona_sessions ps ON tu.session_id = ps.id
-         WHERE ps.user_id = ?
-         ORDER BY tu.created_at DESC LIMIT ?`,
-        [userId, limit]
-      );
-      return usage;
+      // TODO: Implement tool usage with Nebula DB collections
+      // For now, return empty array as the tables haven't been migrated yet
+      console.log('Tool usage not yet implemented with Nebula DB');
+      return [];
     } catch (error) {
       console.error('Error getting recent tool usage:', error);
       return [];

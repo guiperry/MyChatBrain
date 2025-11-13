@@ -57,15 +57,8 @@ export default function Home() {
         console.log('App initialization complete');
         if (isMounted) {
           setIsAppReady(true);
-          const loader = document.getElementById('initial-loader');
-          if (loader) {
-            console.log('Found initial loader, hiding it');
-            loader.classList.add('hidden');
-            setTimeout(() => {
-              loader.style.display = 'none';
-              console.log('Initial loader hidden');
-            }, 300);
-          }
+          // Dispatch event to hide the loading indicator
+          window.dispatchEvent(new CustomEvent('app-ready'));
         }
       } catch (error) {
         console.error('Initialization error:', error);

@@ -49,17 +49,16 @@ export async function getCurrentUser(req: NextRequest): Promise<any> {
   }
 
   // Get RxDB helper instance
-  const rxdbHelper = await db();
+  const NebulaDBHelper = await db();
 
-  const user = await rxdbHelper.getUser(decoded.userId.toString());
+  const user = await NebulaDBHelper.getUser(decoded.userId);
 
   if (!user) {
     return null;
   }
 
   // Don't return the password
-  const userData = user.toJSON();
-  const { password, ...userWithoutPassword } = userData;
+  const { password, ...userWithoutPassword } = user;
   return userWithoutPassword;
 }
 

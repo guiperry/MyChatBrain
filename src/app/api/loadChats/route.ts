@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       try {
         const decoded = verifyToken(token);
         if (decoded) {
-          userId = decoded.userId;
+          userId = decoded.userId || null;
         }
       } catch (error) {
         console.error('Token verification error:', error);
@@ -30,17 +30,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get RxDB helper instance
-    const rxdbHelper = await db();
+    // Get database helper instance
+    const dbHelper = await db();
 
     // Fetch chat sessions
-    const sessions = await rxdbHelper.getChatSessions(userId);
+    const sessions = await dbHelper.getChatSessions(userId);
 
     // Fetch messages for these sessions with proper transformation and validation
     const formattedSessions: ChatSession[] = await Promise.all(
-      sessions.map(async (session) => {
-        const messages = await rxdbHelper.getChatMessages(session.id);
-        const sessionData = session.toJSON();
+      sessions.map(async (session: any) => {
+        const messages = await dbHelper.getChatMessages(session._id);
+        const sessionData = session;
 
         // Transform session data with validation
         const transformedSession = safeTransform(
@@ -61,8 +61,8 @@ export async function GET(request: NextRequest) {
         }
 
         // Transform messages with validation
-        const transformedMessages: ChatMessage[] = messages.map(msg => {
-          const msgData = msg.toJSON();
+        const transformedMessages: ChatMessage[] = messages.map((msg: any) => {
+          const msgData = msg;
           const transformedMessage = safeTransform(
             msgData,
             (data) => ({

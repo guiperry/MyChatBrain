@@ -1,5 +1,7 @@
+import { db, collections } from '@/database/nebuladb';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { getNebulaDBHelper } from '@/database/nebuladb-helper';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { DecodedToken } from '@/types';
@@ -11,16 +13,16 @@ export async function GET(request: NextRequest) {
     const token = cookieStore.get('gemini-auth-token')?.value;
 
     // If no token, return public settings only
-    let userId = null;
+    let userId: number | null = null;
     if (token) {
       const decoded = verifyToken(token) as DecodedToken | null;
       if (decoded) {
-        userId = decoded.userId;
+        userId = Number(decoded.userId);
       }
     }
 
     // Get RxDB helper instance
-    const rxdbHelper = await getRxDBHelper();
+    const dbHelper = await getNebulaDBHelper();
 
     // Get key from URL
     const { searchParams } = new URL(request.url);
@@ -41,7 +43,7 @@ export async function GET(request: NextRequest) {
         let settingValue = '';
         if (userId) {
           // Get user-specific setting
-          const setting = await rxdbHelper.getSetting(userId, settingKey);
+          const setting = await dbHelper.getSetting(userId, settingKey);
           if (setting) {
             settingValue = setting.value || '';
           }
@@ -49,8 +51,8 @@ export async function GET(request: NextRequest) {
 
         // If no user-specific setting, try to get a global setting (user_id = null)
         if (!settingValue) {
-          const settings = await rxdbHelper.getSettings(null as any);
-          const globalSetting = settings.find(s => s.key === settingKey);
+          const settings = await dbHelper.getSettings(null as any);
+          const globalSetting = settings.find((s: any) => s.key === settingKey);
           if (globalSetting) {
             settingValue = globalSetting.value || '';
           }
@@ -80,7 +82,7 @@ export async function GET(request: NextRequest) {
     let settingValue = '';
     if (userId) {
       // Get user-specific setting
-      const setting = await rxdbHelper.getSetting(userId, key);
+      const setting = await dbHelper.getSetting(userId, key);
       if (setting) {
         settingValue = setting.value || '';
       }
@@ -88,8 +90,8 @@ export async function GET(request: NextRequest) {
 
     // If no user-specific setting, try to get a global setting
     if (!settingValue) {
-      const settings = await rxdbHelper.getSettings(null as any);
-      const globalSetting = settings.find(s => s.key === key);
+      const settings = await dbHelper.getSettings(null as any);
+      const globalSetting = settings.find((s: any) => s.key === key);
       if (globalSetting) {
         settingValue = (globalSetting.value || '') as string;
       }

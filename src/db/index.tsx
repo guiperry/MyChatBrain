@@ -1,5 +1,5 @@
-// Re-export the RxDB helper as the main database interface
-export { getRxDBHelper as db } from './rxdb';
+// Re-export the NebulaDB helper as the main database interface
+export { getNebulaDBHelper as db } from '../../database/nebuladb-helper';
 
 // Also export schema for compatibility
 export * as schema from './schema';

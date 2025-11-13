@@ -1,4 +1,4 @@
-import { db } from '@/db';
+import { db, collections } from '@/database/nebuladb';
 import type { ErrorEvents } from '@/db/schema';
 
 /**
@@ -66,17 +66,17 @@ export class ErrorMonitor {
    */
   static async recordError(sessionId: number, error: ErrorResult): Promise<ErrorEvents | null> {
     try {
-      const insertResult = db.run(
-        'INSERT INTO error_events (session_id, type, severity, details) VALUES (?, ?, ?, ?)',
-        [sessionId, error.type, error.severity, error.details]
-      );
+      const errorEvent = {
+        session_id: sessionId,
+        type: error.type,
+        severity: error.severity,
+        details: error.details,
+        resolution_state: 'open' as const,
+        created_at: new Date().toISOString()
+      };
 
-      const inserted = db.get(
-        'SELECT * FROM error_events WHERE id = ?',
-        [insertResult.lastInsertRowid]
-      ) as ErrorEvents;
-
-      return inserted || null;
+      const inserted = await collections.error_events.insert(errorEvent);
+      return inserted as ErrorEvents;
     } catch (err) {
       console.error('Error recording error event:', err);
       return null;
@@ -88,11 +88,8 @@ export class ErrorMonitor {
    */
   static async getSessionErrors(sessionId: number): Promise<ErrorEvents[]> {
     try {
-      const errors = db.all(
-        'SELECT * FROM error_events WHERE session_id = ? ORDER BY created_at DESC',
-        [sessionId]
-      ) as ErrorEvents[];
-      return errors;
+      const errors = await collections.error_events.findOne({ session_id: sessionId });
+      return errors ? [errors] : [];
     } catch (error) {
       console.error('Error getting session errors:', error);
       return [];
@@ -104,11 +101,13 @@ export class ErrorMonitor {
    */
   static async getRecentErrors(limit: number = 50): Promise<ErrorEvents[]> {
     try {
-      const errors = db.all(
-        'SELECT * FROM error_events ORDER BY created_at DESC LIMIT ?',
-        [limit]
-      ) as ErrorEvents[];
-      return errors;
+      // NebulaDB doesn't have a direct equivalent to LIMIT, so we'll get all and slice
+      const allErrors = await collections.error_events.findOne({});
+      const errors = allErrors ? [allErrors] : [];
+      // Sort by created_at descending and limit
+      return errors
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, limit);
     } catch (error) {
       console.error('Error getting recent errors:', error);
       return [];
@@ -120,11 +119,11 @@ export class ErrorMonitor {
    */
   static async updateErrorStatus(errorId: number, status: 'open' | 'resolved' | 'ignored'): Promise<boolean> {
     try {
-      const result = db.run(
-        'UPDATE error_events SET resolution_state = ? WHERE id = ?',
-        [status, errorId]
+      const result = await collections.error_events.update(
+        { _id: errorId },
+        { resolution_state: status }
       );
-      return result.changes > 0;
+      return !!result;
     } catch (error) {
       console.error('Error updating error status:', error);
       return false;

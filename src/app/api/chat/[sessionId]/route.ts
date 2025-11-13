@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { db } from '@/db';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { DecodedToken } from '@/types';
@@ -13,8 +13,8 @@ export async function DELETE(
   try {
     console.log('Delete chat request received:', { params });
 
-    // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
+    // Get database helper
+    const dbHelper = await db();
 
     // Get token from cookie
     const cookieStore = cookies();
@@ -34,10 +34,10 @@ export async function DELETE(
     }
 
     // Get the session to verify it exists
-    const session = await rxdbHelper.getChatSession(sessionId);
-    
+    const session = await dbHelper.getChatSession(sessionId);
+
     if (!session) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Chat session not found',
         details: { sessionId }
       }, { status: 404 });
@@ -55,7 +55,7 @@ export async function DELETE(
     }
 
     // Delete the chat session
-    await rxdbHelper.deleteChatSession(sessionId);
+    await dbHelper.deleteChatSession(sessionId);
     console.log('Successfully deleted chat session:', sessionId);
 
     return NextResponse.json({ 

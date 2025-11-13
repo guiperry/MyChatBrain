@@ -1,9 +1,10 @@
+import { db, collections } from '@/database/nebuladb';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { getNebulaDBHelper } from '@/database/nebuladb-helper';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { findSimilarNodes } from '@/lib/memoryVectors';
-import type { MemoryNodes, Users } from '@/db/schema';
 
 interface AuthenticatedUser {
   id: string;
@@ -23,11 +24,9 @@ export async function GET(req: NextRequest) {
 
     // Get the user ID from the session
     const userEmail = user.email;
-    const dbUser = await db.get(
-      'SELECT id FROM users WHERE email = ?',
-      [userEmail]
-    ) as Users | null;
-    if (!dbUser?.id) {
+    const dbHelper = await getNebulaDBHelper();
+    const dbUser = await dbHelper.getUserByEmail(userEmail);
+    if (!dbUser) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
 
@@ -64,10 +63,7 @@ export async function GET(req: NextRequest) {
     const nodes = [];
     for (const result of results || []) {
       if (result.nodeId) {
-        const node = await db.get(
-          'SELECT id, label, type, metadata, created_at, updated_at FROM memory_nodes WHERE id = ?',
-          [result.nodeId]
-        ) as MemoryNodes | null;
+        const node = await dbHelper.getMemoryNode(parseInt(result.nodeId));
 
         if (node && node.id && node.label && node.type) {
           nodes.push({

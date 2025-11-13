@@ -1,19 +1,13 @@
-#!/usr/bin/env node
+import { getNebulaDBHelper } from '@/database/nebuladb-helper';
+import bcrypt from 'bcryptjs';
 
-// Add crypto polyfill for Node.js environment
-const { webcrypto } = require('crypto');
-global.crypto = webcrypto;
+let isSeeded = false;
 
-// Seed the database with initial data
-const { getNebulaDBHelper } = require('../database/nebuladb-helper');
-const { collections } = require('../database/nebuladb');
-const bcrypt = require('bcryptjs');
-
-async function seedDatabase() {
-  console.log('Seeding NebulaDB database...');
+export async function initializeDatabase() {
+  if (isSeeded) return;
 
   try {
-    // Get NebulaDB helper instance
+    console.log('Initializing database...');
     const dbHelper = await getNebulaDBHelper();
 
     // Check if admin user already exists
@@ -24,18 +18,12 @@ async function seedDatabase() {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash('admin123', salt);
 
-      // Create admin user with ID 1
-      const adminUser = {
-        id: 1,
+      // Create admin user
+      await dbHelper.createUser({
         username: 'admin',
         email: 'admin@example.com',
-        password: hashedPassword,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      // Insert directly
-      await collections.users.insert(adminUser);
+        password: hashedPassword
+      });
 
       console.log('Admin user created successfully');
       console.log('Username: admin');
@@ -63,7 +51,7 @@ async function seedDatabase() {
     for (const prompt of defaultPrompts) {
       // Check if prompt already exists (look for prompts with null user_id)
       const existingPrompts = await dbHelper.getPrompts(null);
-      const existing = existingPrompts.find(p => p.title === prompt.title);
+      const existing = existingPrompts.find((p: any) => p.content === prompt.content);
 
       if (!existing) {
         await dbHelper.createPrompt({
@@ -77,11 +65,10 @@ async function seedDatabase() {
       }
     }
 
-    console.log('Database seeding completed successfully');
+    console.log('Database initialization completed successfully');
+    isSeeded = true;
   } catch (error) {
-    console.error('Error seeding database:', error);
-    process.exit(1);
+    console.error('Error initializing database:', error);
+    throw error;
   }
 }
-
-seedDatabase();

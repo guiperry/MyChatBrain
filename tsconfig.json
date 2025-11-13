@@ -4,7 +4,8 @@
     "lib": [
       "dom",
       "dom.iterable",
-      "esnext"
+      "esnext",
+      "ES2021.WeakRef"
     ],
     "allowJs": true,
     "skipLibCheck": true,
@@ -27,6 +28,9 @@
       ],
       "@/db/*": [
         "src/db/*"
+      ],
+      "@/database/*": [
+        "database/*"
       ]
     },
     "outDir": "./dist/",
@@ -42,7 +46,9 @@
     "src/**/*",
     ".next/types/**/*.ts",
     "src/phosphor-icons.d.ts",
-    "src/types/**/*.d.ts"
+    "src/types/**/*.d.ts",
+    "types/**/*.d.ts",
+    "database/**/*.ts"
   ],
   "exclude": [
     "node_modules",

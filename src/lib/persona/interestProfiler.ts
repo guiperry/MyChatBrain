@@ -1,4 +1,4 @@
-import { db } from '@/db';
+import { db, collections } from '@/database/nebuladb';
 import type { InterestMetrics } from '@/db/schema';
 
 /**
@@ -81,7 +81,7 @@ export class InterestProfiler {
 
       for (const interest of newInterests) {
         // Check if interest already exists
-        const existing = db.get(
+        const existing = await db.get(
           'SELECT * FROM interest_metrics WHERE user_id = ? AND topic = ?',
           [userId, interest.topic]
         ) as InterestMetrics | undefined;
@@ -102,20 +102,27 @@ export class InterestProfiler {
         }
 
         // Upsert the interest
-        db.run(
-          `INSERT OR REPLACE INTO interest_metrics (id, user_id, topic, weight, decay_factor, last_updated, created_at)
-           VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, COALESCE((SELECT created_at FROM interest_metrics WHERE id = ?), CURRENT_TIMESTAMP))`,
-          [existing?.id, userId, interest.topic, newWeight, decayFactor, existing?.id]
-        );
-
-        updatedMetrics.push({
-          id: existing?.id,
+        const interestMetric = {
           user_id: userId,
           topic: interest.topic,
           weight: newWeight,
           decay_factor: decayFactor,
           last_updated: new Date().toISOString(),
           created_at: existing?.created_at || new Date().toISOString()
+        };
+
+        if (existing) {
+          await collections.interest_metrics.update(
+            { _id: existing.id },
+            { $set: interestMetric }
+          );
+        } else {
+          await collections.interest_metrics.insert(interestMetric);
+        }
+
+        updatedMetrics.push({
+          id: existing?.id,
+          ...interestMetric
         } as InterestMetrics);
       }
 
@@ -131,7 +138,7 @@ export class InterestProfiler {
    */
   static async getCurrentInterests(userId: number): Promise<InterestMetrics[]> {
     try {
-      const interests = db.all(
+      const interests = await db.all(
         'SELECT * FROM interest_metrics WHERE user_id = ?',
         [userId]
       ) as InterestMetrics[];
@@ -147,9 +154,9 @@ export class InterestProfiler {
 
         // Update in database if significant decay occurred
         if (Math.abs(newWeight - interest.weight) > 0.01) {
-          db.run(
-            'UPDATE interest_metrics SET weight = ?, last_updated = CURRENT_TIMESTAMP WHERE id = ?',
-            [newWeight, interest.id]
+          await collections.interest_metrics.update(
+            { _id: interest.id },
+            { $set: { weight: newWeight, last_updated: now.toISOString() } }
           );
         }
 
@@ -190,7 +197,7 @@ export class InterestProfiler {
    */
   static async decayAllInterests(userId: number): Promise<void> {
     try {
-      const interests = db.all(
+      const interests = await db.all(
         'SELECT * FROM interest_metrics WHERE user_id = ?',
         [userId]
       ) as InterestMetrics[];
@@ -201,12 +208,12 @@ export class InterestProfiler {
 
         if (decayedWeight < 0.01) {
           // Remove very weak interests
-          db.run('DELETE FROM interest_metrics WHERE id = ?', [interest.id]);
+          await collections.interest_metrics.delete({ _id: interest.id });
         } else {
           // Update decayed weight
-          db.run(
-            'UPDATE interest_metrics SET weight = ?, last_updated = CURRENT_TIMESTAMP WHERE id = ?',
-            [decayedWeight, interest.id]
+          await collections.interest_metrics.update(
+            { _id: interest.id },
+            { $set: { weight: decayedWeight, last_updated: new Date().toISOString() } }
           );
         }
       }

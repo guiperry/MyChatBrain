@@ -1,5 +1,7 @@
+import { db, collections } from '@/database/nebuladb';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { getNebulaDBHelper } from '@/database/nebuladb-helper';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
@@ -7,7 +9,7 @@ export async function POST(request: NextRequest) {
   console.log('Notes save API called');
   try {
     // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
+    const dbHelper = await getNebulaDBHelper();
 
     // Temporarily skip authentication for notes - treat all as anonymous
     let userId: number | null = null;
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest) {
       console.log('Updating existing note with ID:', noteId);
 
       // Check if the note exists
-      const existingNote = await rxdbHelper.getNote(noteId);
+      const existingNote = await dbHelper.getNote(noteId);
       console.log('Existing note found:', existingNote);
 
       if (!existingNote) {
@@ -66,7 +68,7 @@ export async function POST(request: NextRequest) {
           noteId
         });
 
-        await rxdbHelper.updateNote(noteId, {
+        await dbHelper.updateNote(noteId, {
           title,
           content
         });
@@ -74,7 +76,7 @@ export async function POST(request: NextRequest) {
         console.log('Note updated successfully');
 
         // Verify the update by fetching the note
-        const updatedNote = await rxdbHelper.getNote(noteId);
+        const updatedNote = await dbHelper.getNote(noteId);
         console.log('Verified updated note:', {
           id: updatedNote?.id,
           title: updatedNote?.title,
@@ -102,7 +104,7 @@ export async function POST(request: NextRequest) {
           contentLength: content.length
         });
 
-        const newNote = await rxdbHelper.createNote({
+        const newNote = await dbHelper.createNote({
           title,
           content,
           user_id: userId
@@ -112,7 +114,7 @@ export async function POST(request: NextRequest) {
         console.log('New note created with ID:', newNoteId);
 
         // Verify the insert by fetching the note
-        const verifiedNote = await rxdbHelper.getNote(newNoteId);
+        const verifiedNote = await dbHelper.getNote(newNoteId);
         console.log('Verified new note:', {
           id: verifiedNote?.id,
           title: verifiedNote?.title,

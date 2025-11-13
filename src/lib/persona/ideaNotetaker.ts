@@ -1,4 +1,4 @@
-import { db } from '@/db';
+import { db, collections } from '@/database/nebuladb';
 import type { IdeaNodes } from '@/db/schema';
 
 /**
@@ -88,19 +88,18 @@ export class IdeaNotetaker {
    */
   static async saveIdea(userId: number, idea: IdeaResult): Promise<IdeaNodes | null> {
     try {
-      const tagsJson = idea.tags ? JSON.stringify(idea.tags) : null;
+      const ideaNode = {
+        user_id: userId,
+        title: idea.title,
+        content: idea.content,
+        tags: idea.tags,
+        status: idea.status,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
 
-      const insertResult = db.run(
-        'INSERT INTO idea_nodes (user_id, title, content, tags, status) VALUES (?, ?, ?, ?, ?)',
-        [userId, idea.title, idea.content, tagsJson, idea.status]
-      );
-
-      const inserted = db.get(
-        'SELECT * FROM idea_nodes WHERE id = ?',
-        [insertResult.lastInsertRowid]
-      ) as IdeaNodes;
-
-      return inserted || null;
+      const inserted = await collections.idea_nodes.insert(ideaNode);
+      return inserted as IdeaNodes;
     } catch (error) {
       console.error('Error saving idea:', error);
       return null;
@@ -112,11 +111,11 @@ export class IdeaNotetaker {
    */
   static async updateIdeaStatus(ideaId: number, status: 'draft' | 'refined' | 'implemented'): Promise<boolean> {
     try {
-      const result = db.run(
-        'UPDATE idea_nodes SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [status, ideaId]
+      const result = await collections.idea_nodes.update(
+        { _id: ideaId },
+        { $set: { status, updatedAt: new Date().toISOString() } }
       );
-      return result.changes > 0;
+      return result.modifiedCount > 0;
     } catch (error) {
       console.error('Error updating idea status:', error);
       return false;
@@ -128,23 +127,18 @@ export class IdeaNotetaker {
    */
   static async getUserIdeas(userId: number, status?: 'draft' | 'refined' | 'implemented'): Promise<IdeaNodes[]> {
     try {
-      let query = 'SELECT * FROM idea_nodes WHERE user_id = ?';
-      const params: any[] = [userId];
-
+      let query: any = { user_id: userId };
+      
       if (status) {
-        query += ' AND status = ?';
-        params.push(status);
+        query.status = status;
       }
 
-      query += ' ORDER BY updated_at DESC';
+      const ideas = await db.all(
+        'SELECT * FROM idea_nodes WHERE user_id = ?' + (status ? ' AND status = ?' : '') + ' ORDER BY updatedAt DESC',
+        status ? [userId, status] : [userId]
+      ) as IdeaNodes[];
 
-      const ideas = db.all(query, params) as IdeaNodes[];
-
-      // Parse tags JSON
-      return ideas.map(idea => ({
-        ...idea,
-        tags: idea.tags ? JSON.parse(idea.tags) : undefined
-      }));
+      return ideas;
     } catch (error) {
       console.error('Error getting user ideas:', error);
       return [];

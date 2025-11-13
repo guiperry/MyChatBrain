@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     if (token) {
       const decoded = verifyToken(token) as DecodedToken | null;
       if (decoded) {
-        userId = decoded.userId;
+        userId = Number(decoded.userId);
       }
     }
 
@@ -32,16 +32,16 @@ export async function POST(request: NextRequest) {
     console.log(`Creating new session with title: ${title} and userId: ${userId}`);
 
     try {
-      // Get RxDB helper instance
-      const rxdbHelper = await db();
+      // Get database helper instance
+      const dbHelper = await db();
 
-      // Create the chat session using RxDB helper
-      const session = await rxdbHelper.createChatSession({
+      // Create the chat session using database helper
+      const session = await dbHelper.createChatSession({
         title,
         user_id: userId
       });
 
-      const newSessionId = session.id;
+      const newSessionId = session._id;
 
       console.log(`New session created with ID: ${newSessionId}`);
 

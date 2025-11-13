@@ -1,4 +1,4 @@
-import { db } from '@/db';
+import { db, collections } from '@/database/nebuladb';
 import type { SentimentMetrics } from '@/db/schema';
 
 /**
@@ -103,19 +103,16 @@ export class SentimentAnalyzer {
     try {
       const result = this.analyze(text);
 
-      const insertResult = db.run(
-        `INSERT INTO sentiment_metrics (message_id, polarity, score, model_version)
-         VALUES (?, ?, ?, ?)`,
-        [messageId, result.polarity, result.score, result.modelVersion]
-      );
+      const sentimentMetric = {
+        message_id: messageId,
+        polarity: result.polarity,
+        score: result.score,
+        model_version: result.modelVersion,
+        created_at: new Date().toISOString()
+      };
 
-      // Retrieve the inserted record
-      const inserted = db.get(
-        'SELECT * FROM sentiment_metrics WHERE id = ?',
-        [insertResult.lastInsertRowid]
-      ) as SentimentMetrics | undefined;
-
-      return inserted || null;
+      const inserted = await collections.sentiment_metrics.insert(sentimentMetric);
+      return inserted as SentimentMetrics;
     } catch (error) {
       console.error('Error analyzing and storing sentiment:', error);
       return null;

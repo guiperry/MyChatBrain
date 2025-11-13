@@ -1,6 +1,8 @@
+import { db, collections } from '@/database/nebuladb';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getRxDBHelper } from '@/db/rxdb';
+import { getNebulaDBHelper } from '@/database/nebuladb-helper';
 import { verifyToken } from '@/lib/auth';
 import { DecodedToken } from '@/types';
 
@@ -10,8 +12,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
+    // Get DB helper
+    const dbHelper = await getNebulaDBHelper();
 
     const promptId = parseInt(params.id);
     if (isNaN(promptId) || promptId <= 0) {
@@ -26,12 +28,12 @@ export async function GET(
     if (token) {
       const decoded = verifyToken(token) as DecodedToken | null;
       if (decoded) {
-        userId = decoded.userId;
+        userId = Number(decoded.userId);
       }
     }
 
     // Fetch the prompt
-    const prompt = await rxdbHelper.getPrompt(promptId);
+    const prompt = await dbHelper.getPrompt(promptId);
 
     if (!prompt) {
       return NextResponse.json({ error: 'Prompt not found' }, { status: 404 });
@@ -59,7 +61,7 @@ export async function PUT(
 ) {
   try {
     // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
+    const dbHelper = await getNebulaDBHelper();
 
     const promptId = parseInt(params.id);
     if (isNaN(promptId) || promptId <= 0) {
@@ -74,12 +76,12 @@ export async function PUT(
     if (token) {
       const decoded = verifyToken(token) as DecodedToken | null;
       if (decoded) {
-        userId = decoded.userId;
+        userId = Number(decoded.userId);
       }
     }
 
     // Fetch the prompt to check ownership
-    const existingPrompt = await rxdbHelper.getPrompt(promptId);
+    const existingPrompt = await dbHelper.getPrompt(promptId);
 
     if (!existingPrompt) {
       return NextResponse.json({ error: 'Prompt not found' }, { status: 404 });
@@ -100,7 +102,7 @@ export async function PUT(
     }
 
     // Update the prompt
-    const updatedPrompt = await rxdbHelper.updatePrompt(promptId, {
+    const updatedPrompt = await dbHelper.updatePrompt(promptId, {
       content: content.trim(),
       title: title?.trim() || null
     });
@@ -125,7 +127,7 @@ export async function DELETE(
 ) {
   try {
     // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
+    const dbHelper = await getNebulaDBHelper();
 
     const promptId = parseInt(params.id);
     if (isNaN(promptId) || promptId <= 0) {
@@ -140,12 +142,12 @@ export async function DELETE(
     if (token) {
       const decoded = verifyToken(token) as DecodedToken | null;
       if (decoded) {
-        userId = decoded.userId;
+        userId = Number(decoded.userId);
       }
     }
 
     // Fetch the prompt to check ownership
-    const existingPrompt = await rxdbHelper.getPrompt(promptId);
+    const existingPrompt = await dbHelper.getPrompt(promptId);
 
     if (!existingPrompt) {
       return NextResponse.json({ error: 'Prompt not found' }, { status: 404 });
@@ -157,7 +159,7 @@ export async function DELETE(
     }
 
     // Delete the prompt
-    await rxdbHelper.deletePrompt(promptId);
+    await dbHelper.deletePrompt(promptId);
 
     return NextResponse.json({
       message: 'Prompt deleted successfully'

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { db } from '@/db';
 import { ChatHistoryItem } from '@/types';
 import {
   isValidChatHistoryItemsArray,
@@ -31,11 +31,11 @@ export async function POST(request: NextRequest) {
     console.log(`Adding ${messages.length} messages to session ${sessionId}`);
 
     try {
-      // Get RxDB helper instance
-      const rxdbHelper = await getRxDBHelper();
+      // Get database helper instance
+      const dbHelper = await db();
 
       // First, verify that the session exists
-      const session = await rxdbHelper.getChatSession(sessionId);
+      const session = await dbHelper.getChatSession(sessionId);
       if (!session) {
         console.error(`Session with ID ${sessionId} does not exist`);
         return NextResponse.json({
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
       console.log(`Verified session ${sessionId} exists, proceeding with message insertion`);
 
-      // Insert messages using RxDB helper with proper transformation
+      // Insert messages using database helper with proper transformation
       for (let i = 0; i < messages.length; i++) {
         const message = messages[i];
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
           `Failed to transform message ${i + 1}`
         );
 
-        await rxdbHelper.addChatMessage(chatMessage);
+        await dbHelper.addChatMessage(chatMessage);
       }
 
       console.log(`Inserted ${messages.length} messages for session ${sessionId}`);

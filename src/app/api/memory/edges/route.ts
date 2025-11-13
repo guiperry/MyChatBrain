@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { getCurrentUser } from '@/lib/auth';
-import { MemoryEdges } from '@/db/schema';
-
-// Helper function for type-safe database queries
-function typedGet<T>(db: any, query: string, params: any[] = []): T {
-  return db.get(query, params) as T;
-}
 
 // POST /api/memory/edges - Create a new edge in the memory graph
 export async function POST(req: NextRequest) {
@@ -47,9 +41,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Get RxDB helper instance
+    const NebulaDBHelper = await db();
+
     // Verify that both nodes exist and belong to the user
-    const sourceNode = await db.get('SELECT id FROM memory_nodes WHERE id = ? AND user_id = ?', [sourceId, user.id]) as {id: number} | undefined;
-    const targetNode = await typedGet<{ id: number }>(db, 'SELECT id FROM memory_nodes WHERE id = ? AND user_id = ?', [targetId, user.id]) as {id: number} | undefined;
+    const sourceNode = await NebulaDBHelper.getMemoryNode(parseInt(sourceId));
+    const targetNode = await NebulaDBHelper.getMemoryNode(parseInt(targetId));
 
     if (!sourceNode) {
       return NextResponse.json(
@@ -66,43 +63,43 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if the edge already exists
-    const existingEdge = await typedGet<{ id: number }>(
-      db,
-      'SELECT id FROM memory_edges WHERE source_id = ? AND target_id = ? AND relation = ?',
-      [sourceId, targetId, relation]
-    ) as {id: number} | undefined;
+    const existingEdges = await NebulaDBHelper.findMemoryEdge(
+      parseInt(sourceId),
+      parseInt(targetId),
+      relation
+    );
 
-    let edgeId;
-    if (existingEdge) {
+    let edge;
+    if (existingEdges.length > 0) {
       // Update the existing edge
-      db.run(
-        'UPDATE memory_edges SET weight = ?, metadata = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [edgeWeight, metadata ? JSON.stringify(metadata) : null, existingEdge.id]
-      );
-      edgeId = existingEdge.id;
+      const existingEdge = existingEdges[0];
+      edge = await existingEdge.patch({
+        weight: edgeWeight,
+        metadata: metadata || '',
+        updated_at: new Date().toISOString()
+      });
     } else {
-      // Insert the new edge
-      const result = db.run(
-        'INSERT INTO memory_edges (source_id, target_id, relation, weight, metadata) VALUES (?, ?, ?, ?, ?)',
-        [sourceId, targetId, relation, edgeWeight, metadata ? JSON.stringify(metadata) : null]
-      );
-      edgeId = result.lastInsertRowid;
+      // Create the new edge
+      edge = await NebulaDBHelper.createMemoryEdge({
+        source_id: parseInt(sourceId),
+        target_id: parseInt(targetId),
+        relation: relation,
+        weight: edgeWeight,
+        metadata: metadata || ''
+      });
     }
-
-    // Get the inserted/updated edge
-    const edge = await typedGet<MemoryEdges>(db, 'SELECT * FROM memory_edges WHERE id = ?', [edgeId]) as MemoryEdges | undefined;
 
     return NextResponse.json({
       success: true,
       edge: edge ? {
-        id: edge?.id!.toString(),
-        source: edge?.source_id.toString(),
-        target: edge?.target_id.toString(),
-        relation: edge?.relation,
-        weight: edge?.weight,
-        metadata: edge?.metadata ? JSON.parse(edge.metadata) : {},
-        createdAt: edge?.created_at,
-        updatedAt: edge?.updated_at
+        id: edge.id,
+        source: edge.source_id.toString(),
+        target: edge.target_id.toString(),
+        relation: edge.relation,
+        weight: edge.weight,
+        metadata: edge.metadata ? JSON.parse(edge.metadata) : {},
+        createdAt: edge.created_at,
+        updatedAt: edge.updated_at
       } : null
     });
   } catch (error) {
@@ -133,15 +130,12 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // Verify that the edge exists and belongs to the user
-    const edge = await db.get(`
-      SELECT e.id
-      FROM memory_edges e
-      JOIN memory_nodes n1 ON e.source_id = n1.id
-      JOIN memory_nodes n2 ON e.target_id = n2.id
-      WHERE e.id = ? AND n1.user_id = ? AND n2.user_id = ?
-    `, [edgeId, user.id, user.id]) as {id: number} | undefined;
+    // Get RxDB helper instance
+    const NebulaDBHelper = await db();
 
+    // Verify that the edge exists and belongs to the user
+    const edge = await NebulaDBHelper.getMemoryNode(parseInt(edgeId));
+    
     if (!edge) {
       return NextResponse.json(
         { success: false, error: 'Edge not found or does not belong to the user' },
@@ -150,7 +144,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Delete the edge
-    db.run('DELETE FROM memory_edges WHERE id = ?', [edgeId]);
+    await NebulaDBHelper.deleteMemoryNode(parseInt(edgeId));
 
     return NextResponse.json({
       success: true,

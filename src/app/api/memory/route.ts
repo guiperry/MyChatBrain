@@ -1,5 +1,7 @@
+import { db, collections } from '@/database/nebuladb';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { getNebulaDBHelper } from '@/database/nebuladb-helper';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { storeNodeVector } from '@/lib/memoryVectors';
@@ -25,22 +27,22 @@ export async function GET(req: NextRequest) {
     const userId = decoded.userId;
 
     // Get RxDB helper instance
-    const rxdbHelper = await getRxDBHelper();
+    const dbHelper = await getNebulaDBHelper();
 
     // Get all nodes for the user
-    const nodes = await rxdbHelper.getMemoryNodes(userId);
+    const nodes = await dbHelper.getMemoryNodes(userId);
 
     // Get all edges
-    const edges = await rxdbHelper.getMemoryEdges();
+    const edges = await dbHelper.getMemoryEdges();
 
     // Filter edges to only include those connected to user's nodes
-    const userNodeIds = new Set(nodes.map(node => parseInt(node.id)));
-    const userEdges = edges.filter(edge =>
+    const userNodeIds = new Set(nodes.map((node: any) => parseInt(node.id)));
+    const userEdges = edges.filter((edge: any) =>
       userNodeIds.has(edge.source_id) && userNodeIds.has(edge.target_id)
     );
 
     // Format the response
-    const formattedNodes = nodes.map((node) => ({
+    const formattedNodes = nodes.map((node: any) => ({
       id: node.id,
       label: node.label,
       type: node.type,
@@ -49,7 +51,7 @@ export async function GET(req: NextRequest) {
       updatedAt: node.updated_at
     }));
 
-    const formattedEdges = userEdges.map((edge) => ({
+    const formattedEdges = userEdges.map((edge: any) => ({
       id: edge.id,
       source: edge.source_id.toString(),
       target: edge.target_id.toString(),
@@ -118,10 +120,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Get RxDB helper instance
-    const rxdbHelper = await getRxDBHelper();
+    const dbHelper = await getNebulaDBHelper();
 
     // Create the new node
-    const node = await rxdbHelper.createMemoryNode({
+    const node = await dbHelper.createMemoryNode({
       label,
       type: type as 'keyword' | 'entity' | 'message' | 'topic' | 'custom',
       user_id: userId,

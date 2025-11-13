@@ -17,17 +17,27 @@ const LoadingIndicator: React.FC = () => {
       setIsLoading(false);
     };
 
+    // Listen for app ready event
+    const handleAppReady = () => {
+      console.log('App ready event received, hiding loader');
+      hideLoader();
+    };
+
     if (document.readyState === 'complete') {
       hideLoader();
     } else {
       window.addEventListener('load', hideLoader);
     }
 
+    // Listen for custom app-ready event
+    window.addEventListener('app-ready', handleAppReady);
+
     const timeoutId = setTimeout(hideLoader, 3000);
 
     return () => {
       clearTimeout(timeoutId);
       window.removeEventListener('load', hideLoader);
+      window.removeEventListener('app-ready', handleAppReady);
     };
   }, []);
 

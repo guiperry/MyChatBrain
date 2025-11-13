@@ -20,18 +20,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Get RxDB helper instance
-    const rxdbHelper = await db();
+    const NebulaDBHelper = await db();
 
     // Get user data from database
-    const user = await rxdbHelper.getUser(decoded.userId.toString());
+    const user = await NebulaDBHelper.getUser(decoded.userId);
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Return user data (without password)
-    const userData = user.toJSON();
-    const { password: _, ...userWithoutPassword } = userData;
+    const { password: _, ...userWithoutPassword } = user;
     return NextResponse.json({
       user: userWithoutPassword
     });

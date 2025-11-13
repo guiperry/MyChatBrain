@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { db } from '@/db';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { DecodedToken, ChatHistoryItem } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get RxDB helper
-    const rxdbHelper = await getRxDBHelper();
+    // Get database helper
+    const dbHelper = await db();
 
     // Get token from cookie
     const cookieStore = cookies();
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     if (token) {
       const decoded = verifyToken(token) as DecodedToken | null;
       if (decoded) {
-        userId = decoded.userId;
+        userId = Number(decoded.userId);
       }
     }
 
@@ -45,30 +45,30 @@ export async function POST(request: NextRequest) {
 
     if (existingSessionId) {
       // Check if the session exists
-      const existingSession = await rxdbHelper.getChatSession(existingSessionId);
+      const existingSession = await dbHelper.getChatSession(existingSessionId);
 
       if (existingSession) {
         // Update the existing session
-        await rxdbHelper.updateChatSession(existingSessionId, { title });
+        await dbHelper.updateChatSession(existingSessionId, { title });
         sessionId = existingSessionId;
 
         // Delete existing messages for this session
-        await rxdbHelper.deleteChatMessages(existingSessionId);
+        await dbHelper.deleteChatMessages(existingSessionId);
       } else {
         // Session doesn't exist, create a new one
-        const newSession = await rxdbHelper.createChatSession({
+        const newSession = await dbHelper.createChatSession({
           title,
           user_id: userId
         });
-        sessionId = newSession.id;
+        sessionId = newSession._id;
       }
     } else {
       // Create a new chat session
-      const newSession = await rxdbHelper.createChatSession({
+      const newSession = await dbHelper.createChatSession({
         title,
         user_id: userId
       });
-      sessionId = newSession.id;
+      sessionId = newSession._id;
     }
 
     // Verify the session was created/updated successfully
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
         const message = messages[i];
         const msgTimestamp = new Date().toISOString();
 
-        await rxdbHelper.addChatMessage({
+        await dbHelper.addChatMessage({
           session_id: sessionId.toString(),
           content: message.text,
           role: message.type,

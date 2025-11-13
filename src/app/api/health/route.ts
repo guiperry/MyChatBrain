@@ -1,23 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRxDBHelper } from '@/db/rxdb';
+import { getNebulaDBHelper } from '@/database/nebuladb-helper';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get RxDB helper instance to verify database connectivity
-    const rxdbHelper = await getRxDBHelper();
+    // Get NebulaDB helper instance to verify database connectivity
+    const dbHelper = await getNebulaDBHelper();
 
     // Simple database check - try to get chat sessions
-    const sessions = await rxdbHelper.getChatSessions();
+    const sessions = await dbHelper.getChatSessions();
     const sessionCount = sessions.length;
 
     // Get collection information
-    const db = await rxdbHelper['db']; // Access the underlying RxDB instance
-    const collections = Object.keys(db.collections);
+    const collections = Object.keys(require('@/database/nebuladb').collections);
 
     return NextResponse.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      database: 'rxdb_connected',
+      database: 'nebuladb_connected',
       collections,
       sessionCount
     });

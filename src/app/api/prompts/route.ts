@@ -19,13 +19,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Get RxDB helper instance
-    const rxdbHelper = await db();
+    const NebulaDBHelper = await db();
 
     // Fetch prompts
-    const prompts = await rxdbHelper.getPrompts(userId);
+    const prompts = await NebulaDBHelper.getPrompts(userId);
 
     return NextResponse.json({
-      prompts: prompts.map(p => p.toJSON())
+      prompts: prompts
     });
   } catch (error) {
     console.error('Error loading prompts:', error);
@@ -57,10 +57,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Get RxDB helper instance
-    const rxdbHelper = await db();
+    const NebulaDBHelper = await db();
 
     // Create the prompt
-    const prompt = await rxdbHelper.createPrompt({
+    const prompt = await NebulaDBHelper.createPrompt({
       content,
       title: title || null,
       user_id: userId
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message: 'Prompt created successfully',
-      prompt: prompt.toJSON()
+      prompt: prompt
     }, { status: 201 });
   } catch (error) {
     console.error('Create prompt error:', error);
