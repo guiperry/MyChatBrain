@@ -5,8 +5,8 @@ const { webcrypto } = require('crypto');
 global.crypto = webcrypto;
 
 // Seed the database with initial data
-const { getNebulaDBHelper } = require('../database/nebuladb-helper');
-const { collections } = require('../database/nebuladb');
+const { getNebulaDBHelper } = require('../src/db/nebuladb-helper');
+const { collections } = require('../src/db/nebuladb');
 const bcrypt = require('bcryptjs');
 
 async function seedDatabase() {

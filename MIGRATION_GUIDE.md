@@ -19,7 +19,7 @@ npm install
 
 ### 2. Verify Database Initialization
 
-The database is automatically initialized in `database/nebuladb.js` (or `.ts`).
+The database is automatically initialized in `src/db/nebuladb.ts`.
 
 Data is stored in your platform-specific application data directory:
 - **Windows**: %APPDATA%\nebuladb-data

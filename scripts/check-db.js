@@ -5,7 +5,7 @@ const { webcrypto } = require('crypto');
 global.crypto = webcrypto;
 
 // Check database contents
-const { getNebulaDBHelper } = require('../database/nebuladb-helper');
+const { getNebulaDBHelper } = require('../src/db/nebuladb-helper');
 
 async function checkDatabase() {
   console.log('Checking NebulaDB database...');

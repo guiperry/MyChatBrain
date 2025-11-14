@@ -30,7 +30,7 @@
         "src/db/*"
       ],
       "@/database/*": [
-        "database/*"
+        "src/db/*"
       ]
     },
     "outDir": "./dist/",
@@ -48,7 +48,7 @@
     "src/phosphor-icons.d.ts",
     "src/types/**/*.d.ts",
     "types/**/*.d.ts",
-    "database/**/*.ts"
+    "src/db/**/*.ts"
   ],
   "exclude": [
     "node_modules",
