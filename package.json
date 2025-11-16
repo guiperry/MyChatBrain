@@ -40,6 +40,9 @@
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie": "^0.6.0",
     "@types/jsonwebtoken": "^9.0.5",
@@ -49,15 +52,18 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/react-syntax-highlighter": "^15.5.11",
+    "@vitest/coverage-v8": "^4.0.8",
     "autoprefixer": "^10.4.21",
     "eslint": "^8",
     "eslint-config-next": "14.0.3",
+    "jsdom": "^26.1.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   },
   "name": "my-chat-brain-ai",
   "private": true,
@@ -71,7 +77,10 @@
     "migrate": "node --import tsx scripts/migrate.mjs",
     "migrate-to-rxdb": "tsx scripts/migrate-to-rxdb.mjs",
     "seed": "node --import tsx scripts/seed-db.js",
-    "start": "next start"
+    "start": "next start",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "version": "0.1.0"
 }
