@@ -1,4 +1,4 @@
-import { collections } from './nebuladb';
+import { collections, getCollections } from './nebuladb';
 
 // Type assertion to access methods that might not be in the type definitions
 let typedCollections: any = null;
@@ -12,14 +12,22 @@ async function getTypedCollections() {
 
 export class NebulaDBHelper {
   // Users collection operations
-  async getUser(id: number) {
+  async getUser(id: number | string) {
     const cols = await getTypedCollections();
-    return await cols.users.findOne({ id });
+    const query = typeof id === 'number' ? { id: id.toString() } : { id: id.toString() };
+    console.log('[getUser] Query:', query);
+    const result = await cols.users.findOne(query);
+    console.log('[getUser] Result:', result ? 'found' : 'not found');
+    return result;
   }
 
   async getUserByUsername(username: string) {
     const cols = await getTypedCollections();
-    return await cols.users.findOne({ username });
+    console.log('[getUserByUsername] Looking for:', username);
+    console.log('[getUserByUsername] Collections keys:', Object.keys(cols));
+    const result = await cols.users.findOne({ username });
+    console.log('[getUserByUsername] Result:', result);
+    return result;
   }
 
   async getUserByEmail(email: string) {
@@ -344,5 +352,11 @@ export async function getNebulaDBHelper(): Promise<NebulaDBHelper> {
   if (!nebulaHelper) {
     nebulaHelper = new NebulaDBHelper();
   }
+  // Ensure collections are initialized (which triggers seeding)
+  await collectionsPromise;
   return nebulaHelper;
 }
+
+// Initialize collections on module load
+const collectionsPromise = getCollections();
+collectionsPromise.catch(console.error);

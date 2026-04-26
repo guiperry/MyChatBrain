@@ -386,32 +386,10 @@ useEffect(() => {
       {/* AI Body content */}
       <div className={`${styles?.container} ${rightSidebarStyles?.withSidebar}`} style={{ zIndex: 30 }}>
         <div className={styles.header}>
-        <h1 className={styles.headerTitle}>My-Chat-Brain</h1>
-        <div className={styles.headerActions}>
-          <button
-            className={styles.notesButton}
-            onClick={() => {
-              // Dispatch event to open right sidebar
-              const event = new CustomEvent('open-right-sidebar');
-              window.dispatchEvent(event);
-            }}
-            aria-label="Open notes"
-            title="Open notes"
-          >
-            <Note size={20} />
-          </button>
-          <div
-            className={styles.userProfile}
-            onClick={() => setSettingsPanelOpen(true)}
-            role="button"
-            aria-label="User profile"
-          >
-            <UserIcon size={20} />
-          </div>
+          <h1 className={styles.headerTitle}>My-Chat-Brain</h1>
         </div>
-      </div>
 
-      <div className={styles.chatContainer} style={{ maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto' }}>
+        <div className={styles.chatContainer} style={{ maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto' }}>
         {apiKeyMissing && (
           <div className={styles.apiKeyWarning} style={{ justifyContent: 'center' }}>
             <Warning size={24} />
@@ -597,7 +575,6 @@ useEffect(() => {
         isOpen={settingsPanelOpen}
         onClose={() => setSettingsPanelOpen(false)}
       />
-    </div>
     </div>
   );
 };

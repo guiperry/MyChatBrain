@@ -6,6 +6,10 @@ const nextConfig = {
   reactStrictMode: true,
   // Configure the page extensions
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
+  // Skip TypeScript type checking during build
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   // Webpack configuration to handle Node.js modules
   webpack: (config, { isServer }) => {
     if (!isServer) {

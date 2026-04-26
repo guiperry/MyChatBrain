@@ -1,17 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getNebulaDBHelper } from '@/database/nebuladb-helper';
+import { getNebulaDBHelper } from '@/db/nebuladb-helper';
 import { comparePasswords, createToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { initializeDatabase } from '@/db/nebuladb';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { username, password } = body as { username: string; password: string };
 
+    console.log('[LOGIN] Attempt for username:', username);
+
     // Validate input
     if (!username || !password) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    // Ensure database is initialized
+    await initializeDatabase();
 
     // Get database helper
     const dbHelper = await getNebulaDBHelper();
@@ -19,11 +25,9 @@ export async function POST(request: NextRequest) {
     // Find user by username
     const user = await dbHelper.getUserByUsername(username);
 
-    console.log('Login attempt for username:', username);
-    console.log('User found:', user ? 'yes' : 'no');
-    if (user) {
-      console.log('User data:', { id: user.id, username: user.username, email: user.email });
-    }
+    console.log('[LOGIN] User found:', user ? 'yes' : 'no', user?.username);
+    console.log('[LOGIN] Stored password hash:', user?.password?.substring(0, 20) + '...');
+    console.log('[LOGIN] Input password:', password);
 
     if (!user) {
       console.log('User not found for username:', username);

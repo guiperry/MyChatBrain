@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { getNebulaDBHelper } from '@/db/nebuladb-helper';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
-import { DecodedToken, CreateChatSessionInput } from '@/types';
-import { isValidChatSession, safeTransform } from '@/lib/dataTransformers';
+import { DecodedToken } from '@/types';
+import { initializeDatabase } from '@/db/nebuladb';
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,16 +32,19 @@ export async function POST(request: NextRequest) {
     console.log(`Creating new session with title: ${title} and userId: ${userId}`);
 
     try {
+      // Ensure database is initialized
+      await initializeDatabase();
+
       // Get database helper instance
-      const dbHelper = await db();
+      const dbHelper = await getNebulaDBHelper();
 
       // Create the chat session using database helper
       const session = await dbHelper.createChatSession({
         title,
-        user_id: userId
+        user_id: userId || 0
       });
 
-      const newSessionId = session._id;
+      const newSessionId = session.id || session._id || Date.now().toString();
 
       console.log(`New session created with ID: ${newSessionId}`);
 

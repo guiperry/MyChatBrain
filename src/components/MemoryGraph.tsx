@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './MemoryGraph.module.css';
 
-// Define the node and edge types
 interface MemoryNode {
   id: string;
   label: string;
@@ -40,181 +39,190 @@ const MemoryGraph: React.FC<MemoryGraphProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<any>(null);
+  const initializedRef = useRef(false);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const containerIdRef = useRef<string>(`cy-${Math.random().toString(36).substring(2, 11)}`);
+
+  const initGraph = useCallback(async () => {
+    if (initializedRef.current) {
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      
+      if (!containerRef.current) {
+        return;
+      }
+
+      const cytoscape = await import('cytoscape');
+      
+      const elements = [
+        ...nodes.map(node => ({
+          data: {
+            id: node.id,
+            label: node.label,
+            type: node.type,
+            weight: 50,
+          },
+          classes: node.type,
+        })),
+        ...edges.map(edge => ({
+          data: {
+            id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            relation: edge.relation,
+            weight: edge.weight,
+          },
+          classes: edge.relation,
+        })),
+      ];
+
+      const cy = cytoscape.default({
+        container: containerRef.current,
+        elements,
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'background-color': 'data(type)',
+              'label': 'data(label)',
+              'color': '#fff',
+              'text-outline-color': 'data(type)',
+              'text-outline-width': 2,
+              'text-valign': 'center',
+              'text-halign': 'center',
+              'font-size': 12,
+              'width': 30,
+              'height': 30,
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'width': 'mapData(weight, 0, 100, 1, 5)',
+              'line-color': '#ccc',
+              'target-arrow-color': '#ccc',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier'
+            }
+          },
+          {
+            selector: 'node.keyword',
+            style: { 'background-color': '#4CAF50' }
+          },
+          {
+            selector: 'node.entity',
+            style: { 'background-color': '#2196F3' }
+          },
+          {
+            selector: 'node.message',
+            style: { 'background-color': '#FF9800' }
+          },
+          {
+            selector: 'node.topic',
+            style: { 'background-color': '#9C27B0' }
+          },
+          {
+            selector: 'node.custom',
+            style: { 'background-color': '#607D8B' }
+          }
+        ],
+        layout: {
+          name: 'cose',
+          idealEdgeLength: 100,
+          nodeOverlap: 20,
+          refresh: 20,
+          fit: true,
+          padding: 30,
+          randomize: false,
+          componentSpacing: 100,
+          nodeRepulsion: 400000,
+          edgeElasticity: 100,
+          nestingFactor: 5,
+          gravity: 80,
+          numIter: 1000,
+          initialTemp: 200,
+          coolingFactor: 0.95,
+          minTemp: 1.0
+        }
+      });
+
+      cy.on('tap', 'node', (event: any) => {
+        const nodeData = event.target.data();
+        const originalNode = nodes.find(n => n.id === nodeData.id);
+        if (originalNode && onNodeClick) {
+          onNodeClick(originalNode);
+        }
+      });
+
+      cy.on('tap', 'edge', (event: any) => {
+        const edgeData = event.target.data();
+        const originalEdge = edges.find(e => e.id === edgeData.id);
+        if (originalEdge && onEdgeClick) {
+          onEdgeClick(originalEdge);
+        }
+      });
+
+      cyRef.current = cy;
+      initializedRef.current = true;
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error initializing cytoscape:', error);
+      setIsLoading(false);
+    }
+  }, [nodes, edges, onNodeClick, onEdgeClick]);
 
   useEffect(() => {
-    let isMounted = true;
-    let cytoscapeInstance: any = null;
+    if (nodes.length > 0 || edges.length > 0) {
+      initGraph();
+    }
 
-    const initializeCytoscape = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Check if container exists and component is still mounted
-        if (!containerRef.current || !isMounted) {
-          return;
-        }
-        
-        // Dynamically import cytoscape
-        const cytoscape = await import('cytoscape');
-        
-        // Convert nodes and edges to cytoscape format
-        const elements = [
-          ...nodes.map(node => ({
-            data: {
-              id: node.id,
-              label: node.label,
-              type: node.type,
-              weight: 50, // Default weight
-            },
-            classes: node.type,
-          })),
-          ...edges.map(edge => ({
-            data: {
-              id: edge.id,
-              source: edge.source,
-              target: edge.target,
-              relation: edge.relation,
-              weight: edge.weight,
-            },
-            classes: edge.relation,
-          })),
-        ];
-
-        // Check again if container exists and component is still mounted
-        if (!containerRef.current || !isMounted) {
-          return;
-        }
-
-        // Initialize cytoscape
-        cytoscapeInstance = cytoscape.default({
-          container: containerRef.current,
-          elements,
-          style: [
-            {
-              selector: 'node',
-              style: {
-                'background-color': 'data(type)',
-                'label': 'data(label)',
-                'color': '#fff',
-                'text-outline-color': 'data(type)',
-                'text-outline-width': 2,
-                'text-valign': 'center',
-                'text-halign': 'center',
-                'font-size': 12,
-                'width': 30,
-                'height': 30,
-              }
-            },
-            {
-              selector: 'edge',
-              style: {
-                'width': 'mapData(weight, 0, 100, 1, 5)',
-                'line-color': '#ccc',
-                'target-arrow-color': '#ccc',
-                'target-arrow-shape': 'triangle',
-                'curve-style': 'bezier'
-              }
-            },
-            {
-              selector: 'node.keyword',
-              style: {
-                'background-color': '#4CAF50',
-              }
-            },
-            {
-              selector: 'node.entity',
-              style: {
-                'background-color': '#2196F3',
-              }
-            },
-            {
-              selector: 'node.message',
-              style: {
-                'background-color': '#FF9800',
-              }
-            },
-            {
-              selector: 'node.topic',
-              style: {
-                'background-color': '#9C27B0',
-              }
-            },
-            {
-              selector: 'node.custom',
-              style: {
-                'background-color': '#607D8B',
-              }
-            }
-          ],
-          layout: {
-            name: 'cose',
-            idealEdgeLength: 100,
-            nodeOverlap: 20,
-            refresh: 20,
-            fit: true,
-            padding: 30,
-            randomize: false,
-            componentSpacing: 100,
-            nodeRepulsion: 400000,
-            edgeElasticity: 100,
-            nestingFactor: 5,
-            gravity: 80,
-            numIter: 1000,
-            initialTemp: 200,
-            coolingFactor: 0.95,
-            minTemp: 1.0
-          }
-        });
-
-        // Store instance reference
-        cyRef.current = cytoscapeInstance;
-
-        // Add event listeners
-        cytoscapeInstance.on('tap', 'node', (event: any) => {
-          const node = event.target;
-          const nodeData = node.data();
-          const originalNode = nodes.find(n => n.id === nodeData.id);
-          if (originalNode && onNodeClick) {
-            onNodeClick(originalNode);
-          }
-        });
-
-        cytoscapeInstance.on('tap', 'edge', (event: any) => {
-          const edge = event.target;
-          const edgeData = edge.data();
-          const originalEdge = edges.find(e => e.id === edgeData.id);
-          if (originalEdge && onEdgeClick) {
-            onEdgeClick(originalEdge);
-          }
-        });
-
-      } catch (error) {
-        console.error('Error initializing cytoscape:', error);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    initializeCytoscape();
-
-    // Cleanup
     return () => {
-      isMounted = false;
-      if (cytoscapeInstance) {
+      if (cyRef.current && !cyRef.current.destroyed) {
         try {
-          cytoscapeInstance.destroy();
-        } catch (error) {
-          // Ignore errors during cleanup as they're usually harmless
-          console.warn('Error during cytoscape cleanup:', error);
-        }
+          cyRef.current.destroy();
+        } catch (e) {}
       }
       cyRef.current = null;
+      initializedRef.current = false;
     };
-  }, [nodes, edges, onNodeClick, onEdgeClick]);
+  }, []);
+
+  useEffect(() => {
+    if (cyRef.current && !cyRef.current.destroyed()) {
+      const cy = cyRef.current;
+      
+      cy.elements().remove();
+      
+      const newElements = [
+        ...nodes.map(node => ({
+          data: {
+            id: node.id,
+            label: node.label,
+            type: node.type,
+            weight: 50,
+          },
+          classes: node.type,
+        })),
+        ...edges.map(edge => ({
+          data: {
+            id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            relation: edge.relation,
+            weight: edge.weight,
+          },
+          classes: edge.relation,
+        })),
+      ];
+      
+      cy.add(newElements);
+      cy.layout({ name: 'cose', fit: true, padding: 30 }).run();
+    }
+  }, [nodes, edges]);
 
   const handleRefresh = () => {
     if (cyRef.current && !cyRef.current.destroyed()) {

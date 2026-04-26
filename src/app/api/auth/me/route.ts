@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { getNebulaDBHelper } from '@/db/nebuladb-helper';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { initializeDatabase } from '@/db/nebuladb';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,11 +20,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // Get RxDB helper instance
-    const NebulaDBHelper = await db();
+    // Ensure database is initialized
+    await initializeDatabase();
+
+    // Get database helper instance
+    const dbHelper = await getNebulaDBHelper();
 
     // Get user data from database
-    const user = await NebulaDBHelper.getUser(decoded.userId);
+    const user = await dbHelper.getUser(decoded.userId);
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });

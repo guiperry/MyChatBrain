@@ -1,9 +1,10 @@
-import { db } from '@/db';
+import { getNebulaDBHelper } from '@/db/nebuladb-helper';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import type { DbUser } from '../types';
+import { initializeDatabase } from '@/db/nebuladb';
 
 // JWT secret key - in production, use environment variable
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -48,18 +49,21 @@ export async function getCurrentUser(req: NextRequest): Promise<any> {
     return null;
   }
 
-  // Get RxDB helper instance
-  const NebulaDBHelper = await db();
+  try {
+    await initializeDatabase();
+    const dbHelper = await getNebulaDBHelper();
+    const user = await dbHelper.getUser(decoded.userId);
 
-  const user = await NebulaDBHelper.getUser(decoded.userId);
+    if (!user) {
+      return null;
+    }
 
-  if (!user) {
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  } catch (error) {
+    console.error('Error getting current user:', error);
     return null;
   }
-
-  // Don't return the password
-  const { password, ...userWithoutPassword } = user;
-  return userWithoutPassword;
 }
 
 // Middleware to protect routes

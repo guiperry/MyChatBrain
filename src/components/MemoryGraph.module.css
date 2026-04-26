@@ -233,3 +233,37 @@
 .custom {
   background-color: #f44336;
 }
+
+.toolbar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+}
+
+.toolbarButton {
+  background-color: #8b5cf6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.toolbarButton:hover {
+  background-color: #7c3aed;
+}
+
+.loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--softTextColor);
+  font-size: 14px;
+  text-align: center;
+}
