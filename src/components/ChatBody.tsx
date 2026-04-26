@@ -389,7 +389,7 @@ useEffect(() => {
           <h1 className={styles.headerTitle}>My-Chat-Brain</h1>
         </div>
 
-        <div className={styles.chatContainer} style={{ maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto' }}>
+      <div className={styles.chatContainer} style={{ maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto' }}>
         {apiKeyMissing && (
           <div className={styles.apiKeyWarning} style={{ justifyContent: 'center' }}>
             <Warning size={24} />
@@ -575,6 +575,7 @@ useEffect(() => {
         isOpen={settingsPanelOpen}
         onClose={() => setSettingsPanelOpen(false)}
       />
+    </div>
     </div>
   );
 };
