@@ -131,8 +131,8 @@ Make sure you have the following installed on your machine:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/gemini-clone-extended-ts.git
-cd gemini-clone-extended-ts
+git clone https://github.com/guiperry/MyChatBrain.git
+cd MyChatBrain
 ```
 
 2. Install dependencies:
