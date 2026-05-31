@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const { prompt } = await request.json();
-    const apiKey = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY;
+    const apiKey = process.env.DEEPSEEK_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json(
@@ -12,7 +12,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    const deepseekUrl = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1/chat/completions';
+
+    const response = await fetch(deepseekUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

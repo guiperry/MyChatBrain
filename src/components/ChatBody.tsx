@@ -28,7 +28,7 @@ interface ChatBodyProps {
   currentModel?: 'gemini' | 'modeldeployer';
 }
 
-const MODEL_NAME = process.env.NEXT_PUBLIC_MODEL_NAME || "@cf/openai/gpt-oss-120b";
+const MODEL_NAME = process.env.NEXT_PUBLIC_MODEL_NAME || "gemini-2.5-flash";
 
 interface ChatResponse {
   response: string;
@@ -198,9 +198,9 @@ const ChatBody: React.FC<ChatBodyProps> = ({ currentModel: externalModel }) => {
   // Check if API key is available
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
-    const modelName = process.env.NEXT_PUBLIC_MODEL_NAME;
 
-    if (!apiKey || apiKey.trim() === '' || !modelName || modelName.trim() === '') {
+    // Model name has a sensible default so only the key is required
+    if (!apiKey || apiKey.trim() === '') {
       setApiKeyMissing(true);
     } else {
       setApiKeyMissing(false);
@@ -215,64 +215,22 @@ const ChatBody: React.FC<ChatBodyProps> = ({ currentModel: externalModel }) => {
     };
   }, []);
 
-  // Helper function to get chat response from chat.knirv.com
+  // Get chat response — Gemini primary, DeepSeek fallback (handled server-side)
   const getChatResponse = async (prompt: string): Promise<string> => {
     try {
       const chatResponse: Response = await fetch('/api/chat', {
         method: "POST",
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: prompt })
       });
 
       const chatJson: ChatResponse = await chatResponse.json();
-
-      // Even if the response is not OK, we'll use the response message
-      // which contains helpful instructions for the user
       return chatJson.response;
     } catch (error) {
       console.error("Error in getChatResponse:", error);
-      return `
-# Connection Error
-
-There was a problem connecting to the chat service at chat.knirv.com. Please check:
-
-1. Your internet connection
-2. That the chat service is available
-
-Try refreshing the page or updating your settings.
-      `;
+      return "# Connection Error\n\nCould not reach the chat service. Please check your internet connection and try again.";
     }
   };
-
-  // Helper function to get DeepSeek response
-  const getDeepSeekResponse = async (prompt: string): Promise<string> => {
-    try {
-      const response = await fetch('/api/deepseek', {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ prompt })
-      });
-
-      const data = await response.json();
-      return data.response || data.message || "No response from DeepSeek";
-    } catch (error) {
-      console.error("Error in getDeepSeekResponse:", error);
-      return `
-# DeepSeek Connection Error
-
-There was a problem connecting to the DeepSeek API. Please check:
-1. Your internet connection
-2. That your API key is correctly set in the settings
-3. That the DeepSeek API service is available
-
-Try refreshing the page or updating your settings.
-      `;
-    }
-  }
 
   // Main function to process chat requests
   const runChat = async (prompt: string): Promise<void> => {
@@ -396,10 +354,10 @@ useEffect(() => {
           <div className={styles.apiKeyWarning} style={{ justifyContent: 'center' }}>
             <Warning size={24} />
             <p>
-              API key not configured. Please set your Gemini API key in the settings.
+              Gemini API key not configured. Set <code>NEXT_PUBLIC_GOOGLE_API_KEY</code> in your Vercel environment variables and redeploy.
             </p>
             <p style={{ fontSize: '14px', marginTop: '8px', color: '#666' }}>
-              Note: Chat is currently using the default cloudflare service at chat.knirv.com
+              DeepSeek will be used as a fallback if <code>DEEPSEEK_API_KEY</code> is set.
             </p>
           </div>
         )}

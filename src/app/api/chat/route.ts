@@ -1,99 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { message, prompt } = body;
+    const message = body.message || body.prompt;
 
-    // Use 'message' if provided, otherwise fall back to 'prompt' for compatibility
-    const chatMessage = message || prompt;
-
-    if (!chatMessage) {
-      return NextResponse.json({
-        response: 'Error: No message provided'
-      }, { status: 400 });
+    if (!message?.trim()) {
+      return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
 
-    // Get Cloudflare credentials from environment
-    const apiKey = process.env.CLOUDFLARE_API_KEY;
-    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-    const model = process.env.CLOUDFLARE_MODEL || '@cf/meta/llama-3.1-8b-instruct';
+    const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+    const modelName = process.env.NEXT_PUBLIC_MODEL_NAME || 'gemini-2.5-flash';
 
-    if (!apiKey) {
-      return NextResponse.json({
-        response: `
-# Cloudflare API Configuration Required
-
-To use the Cloudflare Workers AI chat service, you need to configure your API credentials:
-
-## Required Environment Variables:
-
-- **CLOUDFLARE_API_KEY**: Your Cloudflare API token
-- **CLOUDFLARE_ACCOUNT_ID**: Your Cloudflare account ID
-- **CLOUDFLARE_MODEL** (optional): The AI model to use (defaults to @cf/meta/llama-3.1-8b-instruct)
-
-## How to get your credentials:
-
-1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/)
-2. Navigate to AI > Workers AI
-3. Create an API token if you don't have one
-4. Copy your Account ID from the dashboard URL or account settings
-
-Add these to your \`.env.local\` file and restart the server.
-        `
-      });
+    // Primary: Gemini
+    if (googleApiKey) {
+      try {
+        const genAI = new GoogleGenerativeAI(googleApiKey);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(message);
+        return NextResponse.json({
+          response: result.response.text(),
+          provider: 'gemini',
+          model: modelName,
+        });
+      } catch (geminiError) {
+        console.error('Gemini failed, trying DeepSeek fallback:', geminiError);
+      }
     }
 
-    // Initialize OpenAI client with Cloudflare Workers AI endpoint
-    const client = new OpenAI({
-      apiKey: apiKey,
-      baseURL: `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1`,
-    });
+    // Fallback: DeepSeek
+    const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
+    const deepseekUrl = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1/chat/completions';
 
-    // Make chat completion request
-    const chatCompletion = await client.chat.completions.create({
-      model: model,
-      messages: [
-        {
-          role: 'user',
-          content: chatMessage
-        }
-      ],
-    });
+    if (deepseekApiKey) {
+      try {
+        const res = await fetch(deepseekUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${deepseekApiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [{ role: 'user', content: message }],
+            temperature: 0.7,
+          }),
+        });
 
-    const response = chatCompletion.choices[0]?.message?.content;
+        if (!res.ok) throw new Error(`DeepSeek responded with ${res.status}`);
 
-    if (!response) {
-      throw new Error('No response received from Cloudflare Workers AI');
+        const data = await res.json();
+        return NextResponse.json({
+          response: data.choices[0]?.message?.content || 'No response from DeepSeek',
+          provider: 'deepseek',
+          model: 'deepseek-chat',
+        });
+      } catch (deepseekError) {
+        console.error('DeepSeek fallback also failed:', deepseekError);
+        return NextResponse.json({
+          response: '# Service Unavailable\n\nBoth Gemini and DeepSeek are currently unavailable. Please check that your API keys are valid and try again.',
+        });
+      }
     }
 
+    // No providers configured
     return NextResponse.json({
-      response: response
+      response: '# API Keys Required\n\nNo AI provider is configured. Please set `NEXT_PUBLIC_GOOGLE_API_KEY` or `DEEPSEEK_API_KEY` in your Vercel environment variables.',
     });
 
   } catch (error) {
-    console.error("Error in Cloudflare Workers AI chat API route:", error);
-    const errorMessage = (error as Error).message;
-
-    return NextResponse.json({
-      response: `
-# Cloudflare Workers AI Connection Error
-
-There was a problem connecting to the Cloudflare Workers AI service at chat.knirv.com:
-
-${errorMessage}
-
-## Troubleshooting:
-
-1. Verify your CLOUDFLARE_API_KEY is correct
-2. Ensure your API token has the necessary permissions for Workers AI
-3. Check that your Cloudflare account has Workers AI enabled
-4. Confirm that chat.knirv.com is properly configured as your Workers AI endpoint
-5. Try a different model if the current one is unavailable
-
-Please check your environment variables and try again.
-      `
-    });
+    console.error('Chat route error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
