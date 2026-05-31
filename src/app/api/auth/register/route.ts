@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getNebulaDBHelper } from '@/database/nebuladb-helper';
 import { hashPassword, createToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { initializeDatabase } from '@/db/nebuladb';
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,6 +31,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 6 characters long' }, { status: 400 });
     }
 
+    // Ensure database is initialized
+    await initializeDatabase();
+
     // Get database helper
     const dbHelper = await getNebulaDBHelper();
 
@@ -55,7 +59,7 @@ export async function POST(request: NextRequest) {
       password: hashedPassword
     });
 
-    const userId = user._id;
+    const userId = user.id;
 
     // Create JWT token
     const token = createToken(userId);

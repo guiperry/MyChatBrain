@@ -1,21 +1,30 @@
 import { createDb, type Document, type Query, type UpdateOperation, type ICollection, type Adapter } from '@nebula-db/core';
-import path from 'path';
-import os from 'os';
+import { put, list } from '@vercel/blob';
 import bcrypt from 'bcryptjs';
 
-class InMemoryAdapter implements Adapter {
-  private data: Record<string, Document[]> = {};
-  async load() { return this.data; }
-  async save(data: Record<string, Document[]>) { this.data = data; }
-}
+const BLOB_DB_PATH = 'nebuladb/state.json';
 
-function getDataDirectory(): string {
-  const platform = os.platform();
-  const homeDir = os.homedir();
-  switch (platform) {
-    case 'win32': return path.join(process.env.APPDATA || path.join(homeDir, 'AppData', 'Roaming'), 'nebuladb-data');
-    case 'darwin': return path.join(homeDir, 'Library', 'Application Support', 'nebuladb-data');
-    default: return path.join(homeDir, '.local', 'share', 'nebuladb-data');
+class BlobAdapter implements Adapter {
+  async load(): Promise<Record<string, Document[]>> {
+    try {
+      const { blobs } = await list({ prefix: BLOB_DB_PATH });
+      if (blobs.length === 0) return {};
+      // cache: 'no-store' prevents Next.js from serving a stale cached response
+      const res = await fetch(blobs[0].url, { cache: 'no-store' });
+      if (!res.ok) return {};
+      return await res.json();
+    } catch (error) {
+      console.warn('BlobAdapter: could not load state, starting fresh:', error);
+      return {};
+    }
+  }
+
+  async save(data: Record<string, Document[]>): Promise<void> {
+    await put(BLOB_DB_PATH, JSON.stringify(data), {
+      access: 'public',
+      addRandomSuffix: false,
+      allowOverwrite: true,
+    });
   }
 }
 
@@ -30,8 +39,8 @@ export async function getDatabase(): Promise<ReturnType<typeof createDb>> {
   }
   initInProgress = true;
   try {
-    dbInstance = createDb({ adapter: new InMemoryAdapter() });
-    console.log('✓ NebulaDB initialized with InMemoryAdapter');
+    dbInstance = createDb({ adapter: new BlobAdapter() });
+    console.log('✓ NebulaDB initialized with BlobAdapter (Vercel Blob)');
     return dbInstance;
   } finally { initInProgress = false; }
 }

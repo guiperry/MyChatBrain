@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@vercel/blob": "^0.27.0",
     "@adaline/anthropic": "^1.8.0",
     "@adaline/gateway": "^1.10.0",
     "@adaline/google": "^1.9.0",
