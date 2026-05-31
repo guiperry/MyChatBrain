@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clerk Implementation Guide — MyChatBrain</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d2e;
+      --surface2: #252840;
+      --border: #2e3250;
+      --accent: #6c63ff;
+      --accent2: #a78bfa;
+      --green: #34d399;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --code-bg: #0d1117;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 40px 24px 80px;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .hero {
+      background: linear-gradient(135deg, #1a1d2e 0%, #252840 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 40px;
+      margin-bottom: 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 220px; height: 220px;
+      background: radial-gradient(circle, rgba(108,99,255,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(108,99,255,0.15);
+      border: 1px solid rgba(108,99,255,0.35);
+      color: var(--accent2);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+    .hero p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 600px;
+    }
+
+    /* Callout boxes */
+    .callout {
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin: 24px 0;
+      border-left: 4px solid;
+      font-size: 0.95rem;
+    }
+    .callout.warning  { background: rgba(251,191,36,0.08);  border-color: var(--yellow); }
+    .callout.info     { background: rgba(108,99,255,0.08);  border-color: var(--accent); }
+    .callout.success  { background: rgba(52,211,153,0.08);  border-color: var(--green);  }
+    .callout.danger   { background: rgba(248,113,113,0.08); border-color: var(--red);    }
+    .callout-title {
+      font-weight: 700;
+      font-size: 0.82rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .callout.warning  .callout-title { color: var(--yellow); }
+    .callout.info     .callout-title { color: var(--accent2); }
+    .callout.success  .callout-title { color: var(--green); }
+    .callout.danger   .callout-title { color: var(--red); }
+
+    /* Sections */
+    .section {
+      margin-bottom: 52px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .step-num {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--accent2);
+      margin: 28px 0 12px;
+    }
+    p { color: var(--muted); margin-bottom: 14px; }
+    strong { color: var(--text); }
+
+    /* Code blocks */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin: 18px 0;
+      overflow: hidden;
+    }
+    .code-label {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 16px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+    pre {
+      padding: 20px;
+      overflow-x: auto;
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+    code {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      color: #e2e8f0;
+    }
+    .hl-keyword  { color: #c792ea; }
+    .hl-string   { color: #c3e88d; }
+    .hl-comment  { color: #546e7a; font-style: italic; }
+    .hl-func     { color: #82aaff; }
+    .hl-type     { color: #ffcb6b; }
+    .hl-var      { color: #f78c6c; }
+    .hl-import   { color: #89ddff; }
+
+    /* Inline code */
+    code.inline {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 0.85em;
+      color: var(--accent2);
+    }
+
+    /* File path chips */
+    .file-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: var(--green);
+      margin-bottom: 10px;
+    }
+
+    /* Checklist */
+    .checklist {
+      list-style: none;
+      padding: 0;
+    }
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .checklist li:last-child { border-bottom: none; }
+    .check-icon {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* Mapping table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin: 18px 0;
+    }
+    th {
+      background: var(--surface2);
+      text-align: left;
+      padding: 10px 14px;
+      color: var(--accent2);
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border-bottom: 2px solid var(--border);
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      vertical-align: top;
+    }
+    td strong { color: var(--text); }
+    tr:last-child td { border-bottom: none; }
+
+    /* Divider */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 40px 0;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-badge">Reference Document</div>
+    <h1>Clerk Implementation Guide</h1>
+    <p>
+      How to correctly integrate Clerk authentication into MyChatBrain, replacing the current custom JWT system.
+      This document captures all the touch-points specific to this codebase.
+    </p>
+  </div>
+
+  <div class="callout warning">
+    <div class="callout-title">Current State</div>
+    Clerk was partially wired in then removed. The custom JWT system (<code class="inline">src/lib/auth.ts</code>,
+    <code class="inline">middleware.ts</code>) is fully functional. Switching to Clerk requires replacing or bridging
+    all five areas documented below.
+  </div>
+
+
+  <!-- Step 1 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="step-num">1</div>
+      <h2>Install &amp; Environment Variables</h2>
+    </div>
+
+    <p>Install the correct Clerk package for Next.js App Router. The project uses Next.js 14.</p>
+
+    <div class="code-block">
+      <div class="code-label">terminal</div>
+      <pre><code>npm install @clerk/nextjs</code></pre>
+    </div>
+
+    <p>
+      Add these variables to your <code class="inline">.env.local</code> and to your
+      <strong>Vercel project environment variables</strong>. Without them the build will succeed but
+      <code class="inline">ClerkProvider</code> will throw at runtime.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">.env.local</div>
+      <pre><code><span class="hl-var">NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</span>=pk_live_xxxxxxxxxxxx
+<span class="hl-var">CLERK_SECRET_KEY</span>=sk_live_xxxxxxxxxxxx
+
+<span class="hl-comment"># Optional — redirect targets after sign-in / sign-out</span>
+<span class="hl-var">NEXT_PUBLIC_CLERK_SIGN_IN_URL</span>=/login
+<span class="hl-var">NEXT_PUBLIC_CLERK_SIGN_UP_URL</span>=/register
+<span class="hl-var">NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL</span>=/
+<span class="hl-var">NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL</span>=/</code></pre>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-title">Where to get the keys</div>
+      Go to <strong>clerk.com → Dashboard → your app → API Keys</strong>.
+      The Publishable Key starts with <code class="inline">pk_</code> and is safe to expose to the client.
+      The Secret Key starts with <code class="inline">sk_</code> and must stay server-side only.
+    </div>
+  </div>
+
+
+  <!-- Step 2 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="step-num">2</div>
+      <h2>Wrap the App with ClerkProvider</h2>
+    </div>
+
+    <div class="file-chip">📄 src/app/layout.tsx</div>
+
+    <p>
+      Replace the current bare layout with one wrapped in <code class="inline">ClerkProvider</code>.
+      This provides auth context to every page and component in the tree.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">src/app/layout.tsx</div>
+      <pre><code><span class="hl-keyword">import</span> { <span class="hl-import">Inter</span> } <span class="hl-keyword">from</span> <span class="hl-string">"next/font/google"</span>;
+<span class="hl-keyword">import</span> <span class="hl-string">"./globals.css"</span>;
+<span class="hl-keyword">import</span> <span class="hl-keyword">type</span> { <span class="hl-type">Metadata</span> } <span class="hl-keyword">from</span> <span class="hl-string">'next'</span>;
+<span class="hl-keyword">import</span> <span class="hl-import">React</span> <span class="hl-keyword">from</span> <span class="hl-string">'react'</span>;
+<span class="hl-keyword">import</span> { <span class="hl-import">ClerkProvider</span> } <span class="hl-keyword">from</span> <span class="hl-string">'@clerk/nextjs'</span>;
+<span class="hl-keyword">import</span> <span class="hl-import">ContextProvider</span> <span class="hl-keyword">from</span> <span class="hl-string">"@/context/ContextProvider"</span>;
+<span class="hl-keyword">import</span> <span class="hl-import">ErrorBoundary</span> <span class="hl-keyword">from</span> <span class="hl-string">"@/components/ErrorBoundary"</span>;
+<span class="hl-keyword">import</span> <span class="hl-import">LoadingIndicator</span> <span class="hl-keyword">from</span> <span class="hl-string">"@/components/LoadingIndicator"</span>;
+
+<span class="hl-keyword">const</span> <span class="hl-var">inter</span> = <span class="hl-func">Inter</span>({ subsets: [<span class="hl-string">"latin"</span>] });
+
+<span class="hl-keyword">export const</span> <span class="hl-var">metadata</span>: <span class="hl-type">Metadata</span> = {
+  title: <span class="hl-string">"My-Chat-Brain AI"</span>,
+  description: <span class="hl-string">"Persistent memory for your favorite AI Chat Bots"</span>,
+};
+
+<span class="hl-keyword">const</span> <span class="hl-func">RootLayout</span>: <span class="hl-type">React.FC</span>&lt;{ children: <span class="hl-type">React.ReactNode</span> }&gt; = ({ children }) =&gt; {
+  <span class="hl-keyword">return</span> (
+    &lt;html lang=<span class="hl-string">"en"</span>&gt;
+      &lt;head&gt;
+        &lt;link rel=<span class="hl-string">"icon"</span> href=<span class="hl-string">"/favicon.ico"</span> sizes=<span class="hl-string">"any"</span> /&gt;
+      &lt;/head&gt;
+      &lt;body className={`${inter.className} light`}&gt;
+        &lt;<span class="hl-import">ClerkProvider</span>&gt;
+          &lt;<span class="hl-import">LoadingIndicator</span> /&gt;
+          &lt;<span class="hl-import">ContextProvider</span>&gt;
+            &lt;<span class="hl-import">ErrorBoundary</span>&gt;
+              {children}
+            &lt;/<span class="hl-import">ErrorBoundary</span>&gt;
+          &lt;/<span class="hl-import">ContextProvider</span>&gt;
+        &lt;/<span class="hl-import">ClerkProvider</span>&gt;
+      &lt;/body&gt;
+    &lt;/html&gt;
+  );
+};
+
+<span class="hl-keyword">export default</span> <span class="hl-var">RootLayout</span>;
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- Step 3 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="step-num">3</div>
+      <h2>Replace middleware.ts with Clerk Middleware</h2>
+    </div>
+
+    <div class="file-chip">📄 middleware.ts  (project root)</div>
+
+    <p>
+      The current <code class="inline">middleware.ts</code> manually checks the
+      <code class="inline">gemini-auth-token</code> JWT cookie and redirects unauthenticated users.
+      Clerk's middleware does the same thing declaratively. Replace the entire file:
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">middleware.ts</div>
+      <pre><code><span class="hl-keyword">import</span> { <span class="hl-import">clerkMiddleware</span>, <span class="hl-import">createRouteMatcher</span> } <span class="hl-keyword">from</span> <span class="hl-string">'@clerk/nextjs/server'</span>;
+
+<span class="hl-comment">// Routes that are publicly accessible without authentication</span>
+<span class="hl-keyword">const</span> <span class="hl-var">isPublicRoute</span> = <span class="hl-func">createRouteMatcher</span>([
+  <span class="hl-string">'/login(.*)'</span>,
+  <span class="hl-string">'/register(.*)'</span>,
+  <span class="hl-string">'/api/auth/login'</span>,
+  <span class="hl-string">'/api/auth/register'</span>,
+  <span class="hl-string">'/api/health'</span>,
+]);
+
+<span class="hl-keyword">export default</span> <span class="hl-func">clerkMiddleware</span>(<span class="hl-keyword">async</span> (auth, request) =&gt; {
+  <span class="hl-keyword">if</span> (!<span class="hl-func">isPublicRoute</span>(request)) {
+    <span class="hl-keyword">await</span> auth.<span class="hl-func">protect</span>();
+  }
+});
+
+<span class="hl-keyword">export const</span> <span class="hl-var">config</span> = {
+  matcher: [
+    <span class="hl-comment">// Skip Next.js internals and static files</span>
+    <span class="hl-string">'/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)'</span>,
+    <span class="hl-string">'/(api|trpc)(.*)'</span>,
+  ],
+};
+</code></pre>
+    </div>
+
+    <div class="callout warning">
+      <div class="callout-title">Remove the old custom middleware logic</div>
+      Once Clerk middleware is active, <code class="inline">src/lib/auth.ts</code>'s
+      <code class="inline">authMiddleware</code> function and the <code class="inline">gemini-auth-token</code>
+      cookie check are no longer needed at the middleware layer. The custom auth utilities
+      (<code class="inline">verifyToken</code>, <code class="inline">comparePasswords</code>) can be retired
+      or kept if you want a migration period.
+    </div>
+  </div>
+
+
+  <!-- Step 4 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="step-num">4</div>
+      <h2>Update API Routes to Use Clerk Auth</h2>
+    </div>
+
+    <p>
+      Every API route that currently calls <code class="inline">verifyToken()</code> or reads
+      <code class="inline">gemini-auth-token</code> from cookies needs to switch to Clerk's
+      server-side <code class="inline">auth()</code> helper. Here's the pattern:
+    </p>
+
+    <h3>Current pattern (custom JWT)</h3>
+    <div class="code-block">
+      <div class="code-label">src/app/api/auth/me/route.ts — current</div>
+      <pre><code><span class="hl-keyword">import</span> { <span class="hl-import">verifyToken</span> } <span class="hl-keyword">from</span> <span class="hl-string">'@/lib/auth'</span>;
+<span class="hl-keyword">import</span> { <span class="hl-import">cookies</span> } <span class="hl-keyword">from</span> <span class="hl-string">'next/headers'</span>;
+
+<span class="hl-keyword">export async function</span> <span class="hl-func">GET</span>(request: <span class="hl-type">NextRequest</span>) {
+  <span class="hl-keyword">const</span> <span class="hl-var">cookieStore</span> = <span class="hl-func">cookies</span>();
+  <span class="hl-keyword">const</span> <span class="hl-var">token</span> = cookieStore.<span class="hl-func">get</span>(<span class="hl-string">'gemini-auth-token'</span>)?.<span class="hl-var">value</span>;
+  <span class="hl-keyword">if</span> (!token) <span class="hl-keyword">return</span> <span class="hl-func">NextResponse</span>.<span class="hl-func">json</span>({ error: <span class="hl-string">'Not authenticated'</span> }, { status: <span class="hl-var">401</span> });
+
+  <span class="hl-keyword">const</span> <span class="hl-var">decoded</span> = <span class="hl-func">verifyToken</span>(token);
+  <span class="hl-keyword">const</span> <span class="hl-var">user</span> = <span class="hl-keyword">await</span> dbHelper.<span class="hl-func">getUser</span>(decoded.userId);
+  <span class="hl-comment">// ...</span>
+}</code></pre>
+    </div>
+
+    <h3>Replacement pattern (Clerk)</h3>
+    <div class="code-block">
+      <div class="code-label">src/app/api/auth/me/route.ts — with Clerk</div>
+      <pre><code><span class="hl-keyword">import</span> { <span class="hl-import">auth</span> } <span class="hl-keyword">from</span> <span class="hl-string">'@clerk/nextjs/server'</span>;
+
+<span class="hl-keyword">export async function</span> <span class="hl-func">GET</span>(request: <span class="hl-type">NextRequest</span>) {
+  <span class="hl-keyword">const</span> { <span class="hl-var">userId</span> } = <span class="hl-keyword">await</span> <span class="hl-func">auth</span>();
+  <span class="hl-keyword">if</span> (!userId) <span class="hl-keyword">return</span> <span class="hl-type">NextResponse</span>.<span class="hl-func">json</span>({ error: <span class="hl-string">'Not authenticated'</span> }, { status: <span class="hl-var">401</span> });
+
+  <span class="hl-comment">// userId is a Clerk string ID like "user_2abc..."</span>
+  <span class="hl-comment">// See Step 5 for bridging it to your NebulaDB numeric user ID</span>
+  <span class="hl-keyword">const</span> <span class="hl-var">dbUser</span> = <span class="hl-keyword">await</span> dbHelper.<span class="hl-func">getUserByClerkId</span>(userId);
+  <span class="hl-comment">// ...</span>
+}</code></pre>
+    </div>
+
+    <h3>Routes that need updating</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Current auth check</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>api/auth/me/route.ts</strong></td>
+          <td>verifyToken from cookie</td>
+          <td>Replace with <code class="inline">auth()</code></td>
+        </tr>
+        <tr>
+          <td><strong>api/auth/login/route.ts</strong></td>
+          <td>bcrypt compare + JWT sign</td>
+          <td>Delete — Clerk handles login</td>
+        </tr>
+        <tr>
+          <td><strong>api/auth/logout/route.ts</strong></td>
+          <td>Deletes cookie</td>
+          <td>Delete — use Clerk's <code class="inline">SignOutButton</code></td>
+        </tr>
+        <tr>
+          <td><strong>api/auth/register/route.ts</strong></td>
+          <td>bcrypt hash + DB insert</td>
+          <td>Delete — Clerk handles registration</td>
+        </tr>
+        <tr>
+          <td><strong>api/createSession/route.ts</strong></td>
+          <td>verifyToken from cookie</td>
+          <td>Replace with <code class="inline">auth()</code></td>
+        </tr>
+        <tr>
+          <td><strong>api/saveChat/route.ts</strong></td>
+          <td>verifyToken (if present)</td>
+          <td>Replace with <code class="inline">auth()</code></td>
+        </tr>
+        <tr>
+          <td><strong>api/loadChats/route.ts</strong></td>
+          <td>verifyToken (if present)</td>
+          <td>Replace with <code class="inline">auth()</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  <!-- Step 5 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="step-num">5</div>
+      <h2>Bridge Clerk User IDs to NebulaDB</h2>
+    </div>
+
+    <p>
+      This is the most important architectural decision. Clerk identifies users with string IDs
+      like <code class="inline">user_2abc123xyz</code>. Your NebulaDB tables use numeric
+      <code class="inline">user_id</code> foreign keys. You have two options:
+    </p>
+
+    <h3>Option A — Add a clerk_id column to users (Recommended)</h3>
+    <p>
+      Add a <code class="inline">clerk_id</code> column to the users table. On first login after
+      migration, look up the user by their Clerk ID. If not found, create a DB record and store
+      the Clerk ID. All existing foreign key relationships stay intact.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">src/db/nebuladb-helper.ts — add this method</div>
+      <pre><code><span class="hl-keyword">async</span> <span class="hl-func">getUserByClerkId</span>(clerkId: <span class="hl-type">string</span>): <span class="hl-type">Promise</span>&lt;<span class="hl-type">DbUser</span> | <span class="hl-keyword">null</span>&gt; {
+  <span class="hl-keyword">const</span> <span class="hl-var">users</span> = <span class="hl-keyword">await</span> <span class="hl-keyword">this</span>.db.<span class="hl-func">find</span>(<span class="hl-string">'users'</span>, { clerk_id: clerkId });
+  <span class="hl-keyword">return</span> users[<span class="hl-var">0</span>] ?? <span class="hl-keyword">null</span>;
+}
+
+<span class="hl-keyword">async</span> <span class="hl-func">upsertClerkUser</span>(clerkId: <span class="hl-type">string</span>, email: <span class="hl-type">string</span>, name: <span class="hl-type">string</span>): <span class="hl-type">Promise</span>&lt;<span class="hl-type">DbUser</span>&gt; {
+  <span class="hl-keyword">let</span> <span class="hl-var">user</span> = <span class="hl-keyword">await</span> <span class="hl-keyword">this</span>.<span class="hl-func">getUserByClerkId</span>(clerkId);
+  <span class="hl-keyword">if</span> (!user) {
+    user = <span class="hl-keyword">await</span> <span class="hl-keyword">this</span>.<span class="hl-func">createUser</span>({ clerk_id: clerkId, email, username: name, password: <span class="hl-string">''</span> });
+  }
+  <span class="hl-keyword">return</span> user;
+}</code></pre>
+    </div>
+
+    <h3>Option B — Use Clerk's userId as the primary key</h3>
+    <p>
+      Change the DB schema to use <code class="inline">clerk_id TEXT PRIMARY KEY</code> instead of
+      a numeric ID. More work upfront but eliminates the bridge permanently. Only practical if
+      you are doing a fresh database setup with no existing data to migrate.
+    </p>
+
+    <div class="callout success">
+      <div class="callout-title">Clerk Webhook for sync</div>
+      Set up a Clerk webhook at <strong>/api/webhooks/clerk</strong> that listens for
+      <code class="inline">user.created</code> and <code class="inline">user.deleted</code> events.
+      This keeps your NebulaDB in sync automatically without relying on "first login" upsert logic.
+      Install <code class="inline">svix</code> (<code class="inline">npm install svix</code>) to verify
+      webhook signatures.
+    </div>
+  </div>
+
+
+  <!-- Step 6 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="step-num">6</div>
+      <h2>Update ChatBody.tsx UI Components</h2>
+    </div>
+
+    <div class="file-chip">📄 src/components/ChatBody.tsx</div>
+
+    <p>
+      The header previously had <code class="inline">SignInButton</code> and
+      <code class="inline">UserButton</code> from Clerk. Here is the correct way to use them,
+      plus how to conditionally show content based on auth state using the
+      <code class="inline">useUser</code> hook:
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">src/components/ChatBody.tsx — header section</div>
+      <pre><code><span class="hl-string">"use client"</span>;
+<span class="hl-keyword">import</span> { <span class="hl-import">SignInButton</span>, <span class="hl-import">SignOutButton</span>, <span class="hl-import">UserButton</span>, <span class="hl-import">useUser</span> } <span class="hl-keyword">from</span> <span class="hl-string">'@clerk/nextjs'</span>;
+
+<span class="hl-comment">// Inside the component:</span>
+<span class="hl-keyword">const</span> { <span class="hl-var">isSignedIn</span>, <span class="hl-var">user</span>, <span class="hl-var">isLoaded</span> } = <span class="hl-func">useUser</span>();
+
+<span class="hl-comment">// In the JSX header:</span>
+&lt;div className={styles.headerActions}&gt;
+  {!isLoaded &amp;&amp; &lt;span&gt;Loading...&lt;/span&gt;}
+
+  {isLoaded &amp;&amp; !isSignedIn &amp;&amp; (
+    &lt;<span class="hl-import">SignInButton</span> mode=<span class="hl-string">"modal"</span>&gt;
+      &lt;button className={styles.signInBtn}&gt;Sign In&lt;/button&gt;
+    &lt;/<span class="hl-import">SignInButton</span>&gt;
+  )}
+
+  {isLoaded &amp;&amp; isSignedIn &amp;&amp; (
+    &lt;<span class="hl-import">UserButton</span> afterSignOutUrl=<span class="hl-string">"/login"</span> /&gt;
+  )}
+&lt;/div&gt;</code></pre>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-title">UserButton vs SignOutButton</div>
+      <code class="inline">UserButton</code> renders Clerk's pre-built avatar dropdown (includes
+      sign-out, profile management). <code class="inline">SignOutButton</code> is a plain wrapper
+      you style yourself — better if you want a custom logout button in the sidebar.
+    </div>
+  </div>
+
+
+  <!-- Step 7 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="step-num">7</div>
+      <h2>Replace or Remove Login / Register Pages</h2>
+    </div>
+
+    <p>
+      The app has custom <code class="inline">/login</code> and <code class="inline">/register</code>
+      pages. With Clerk you have two paths:
+    </p>
+
+    <table>
+      <thead>
+        <tr><th>Approach</th><th>How</th><th>Trade-off</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Clerk-hosted UI</strong></td>
+          <td>Delete the pages. Clerk redirects to its hosted sign-in flow at <code class="inline">accounts.clerk.dev</code>.</td>
+          <td>Zero maintenance. Less control over appearance.</td>
+        </tr>
+        <tr>
+          <td><strong>Embedded components</strong></td>
+          <td>Replace page content with <code class="inline">&lt;SignIn /&gt;</code> and <code class="inline">&lt;SignUp /&gt;</code> from <code class="inline">@clerk/nextjs</code>.</td>
+          <td>Stays on your domain. Clerk handles all logic, you control the surrounding layout.</td>
+        </tr>
+        <tr>
+          <td><strong>Custom UI + Clerk hooks</strong></td>
+          <td>Keep your existing forms, use <code class="inline">useSignIn()</code> and <code class="inline">useSignUp()</code> hooks to call Clerk's auth methods.</td>
+          <td>Most control. Most work. Needed if you want a fully custom design.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Embedded component example (recommended)</h3>
+    <div class="code-block">
+      <div class="code-label">src/app/login/page.tsx</div>
+      <pre><code><span class="hl-keyword">import</span> { <span class="hl-import">SignIn</span> } <span class="hl-keyword">from</span> <span class="hl-string">'@clerk/nextjs'</span>;
+
+<span class="hl-keyword">export default function</span> <span class="hl-func">LoginPage</span>() {
+  <span class="hl-keyword">return</span> (
+    &lt;main style={{ display: <span class="hl-string">'flex'</span>, justifyContent: <span class="hl-string">'center'</span>, paddingTop: <span class="hl-string">'80px'</span> }}&gt;
+      &lt;<span class="hl-import">SignIn</span> /&gt;
+    &lt;/main&gt;
+  );
+}</code></pre>
+    </div>
+  </div>
+
+
+  <!-- Step 8 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="step-num">8</div>
+      <h2>Clean Up Custom Auth Utilities</h2>
+    </div>
+
+    <p>Once Clerk is fully wired in, the following files can be deleted or archived:</p>
+
+    <ul class="checklist">
+      <li>
+        <div class="check-icon"></div>
+        <div>
+          <strong>src/lib/auth.ts</strong> — <code class="inline">hashPassword</code>,
+          <code class="inline">comparePasswords</code>, <code class="inline">createToken</code>,
+          <code class="inline">verifyToken</code>, <code class="inline">authMiddleware</code> are all
+          replaced by Clerk. The <code class="inline">getCurrentUser</code> function is replaced by
+          <code class="inline">auth()</code> server-side or <code class="inline">useUser()</code> client-side.
+        </div>
+      </li>
+      <li>
+        <div class="check-icon"></div>
+        <div>
+          <strong>src/app/api/auth/login/route.ts</strong> — Clerk handles credential verification.
+        </div>
+      </li>
+      <li>
+        <div class="check-icon"></div>
+        <div>
+          <strong>src/app/api/auth/register/route.ts</strong> — Clerk handles user creation.
+        </div>
+      </li>
+      <li>
+        <div class="check-icon"></div>
+        <div>
+          <strong>src/app/api/auth/logout/route.ts</strong> — Clerk handles session termination.
+        </div>
+      </li>
+      <li>
+        <div class="check-icon"></div>
+        <div>
+          <strong>Dependencies to remove:</strong>
+          <code class="inline">bcryptjs</code>, <code class="inline">jsonwebtoken</code>,
+          <code class="inline">@types/bcryptjs</code>, <code class="inline">@types/jsonwebtoken</code>
+          — no longer needed once JWT auth is gone.
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <hr />
+
+  <!-- Summary table -->
+  <div class="section">
+    <div class="section-header">
+      <div class="step-num" style="background: var(--green);">✓</div>
+      <h2>Implementation Checklist</h2>
+    </div>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Task</th><th>File(s)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Add <code class="inline">NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</code> and <code class="inline">CLERK_SECRET_KEY</code> to Vercel env vars</td><td>Vercel Dashboard</td></tr>
+        <tr><td>2</td><td>Install <code class="inline">@clerk/nextjs</code></td><td>package.json</td></tr>
+        <tr><td>3</td><td>Wrap app in <code class="inline">ClerkProvider</code></td><td>src/app/layout.tsx</td></tr>
+        <tr><td>4</td><td>Replace <code class="inline">middleware.ts</code> with <code class="inline">clerkMiddleware</code></td><td>middleware.ts</td></tr>
+        <tr><td>5</td><td>Add <code class="inline">clerk_id</code> column to NebulaDB users table</td><td>src/db/nebuladb.ts</td></tr>
+        <tr><td>6</td><td>Add <code class="inline">getUserByClerkId</code> + <code class="inline">upsertClerkUser</code></td><td>src/db/nebuladb-helper.ts</td></tr>
+        <tr><td>7</td><td>Replace <code class="inline">verifyToken</code> calls with <code class="inline">auth()</code> in all API routes</td><td>src/app/api/*/route.ts</td></tr>
+        <tr><td>8</td><td>Add <code class="inline">useUser</code> + Clerk buttons to ChatBody header</td><td>src/components/ChatBody.tsx</td></tr>
+        <tr><td>9</td><td>Replace or embed <code class="inline">SignIn</code> / <code class="inline">SignUp</code> on login &amp; register pages</td><td>src/app/login/, src/app/register/</td></tr>
+        <tr><td>10</td><td>Delete custom auth API routes and <code class="inline">src/lib/auth.ts</code></td><td>src/app/api/auth/, src/lib/auth.ts</td></tr>
+        <tr><td>11</td><td>(Optional) Add Clerk webhook at <code class="inline">/api/webhooks/clerk</code> for user sync</td><td>src/app/api/webhooks/clerk/route.ts</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    MyChatBrain — Clerk Implementation Reference &nbsp;·&nbsp; Generated 2026-05-31
+  </div>
+
+</div>
+</body>
+</html>

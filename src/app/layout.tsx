@@ -6,7 +6,6 @@ import React from 'react';
 import ContextProvider from "@/context/ContextProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingIndicator from "@/components/LoadingIndicator";
-import { ClerkProvider } from "@clerk/nextjs";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,15 +26,13 @@ const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body className={`${inter.className} light`}>
-        <ClerkProvider>
-          <LoadingIndicator />
+        <LoadingIndicator />
 
           <ContextProvider>
             <ErrorBoundary>
               {children}
             </ErrorBoundary>
           </ContextProvider>
-        </ClerkProvider>
       </body>
     </html>
   );

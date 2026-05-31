@@ -15,7 +15,6 @@ import { User as UserIcon } from "@phosphor-icons/react/dist/ssr";
 import { Context } from "@/context/ContextProvider";
 import styles from "./ChatBody.module.css";
 import { Settings as SettingsIcon } from "react-feather";
-import { SignInButton, UserButton } from "@clerk/nextjs";
 import RightSideBar from "./RightSideBar";
 import rightSidebarStyles from "./RightSideBar.module.css";
 import modelSelectStyles from "./ModelSelect.module.css";
@@ -389,8 +388,6 @@ useEffect(() => {
         <div className={styles.header}>
           <h1 className={styles.headerTitle}>My-Chat-Brain</h1>
           <div className={styles.headerActions}>
-            <SignInButton />
-            <UserButton />
           </div>
         </div>
 
