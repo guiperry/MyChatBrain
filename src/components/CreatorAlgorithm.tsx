@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, CheckCircle2, AlertCircle, TrendingUp, Clock, Zap, X } from 'lucide-react';
 
+interface ConfirmDialogState {
+  message: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  onConfirm: () => void;
+  onCancel?: () => void;
+}
+
 interface UserContext {
   stage: string;
   problem: string;
@@ -43,6 +51,7 @@ const CreatorAlgorithmApp: React.FC<CreatorAlgorithmProps> = ({ onClose, session
   const [aiInsights, setAiInsights] = useState<string>('');
   const [activeSessionId, setActiveSessionId] = useState<string | null>(sessionId ?? null);
   const [isLoadingSession, setIsLoadingSession] = useState<boolean>(false);
+  const [confirmState, setConfirmState] = useState<ConfirmDialogState | null>(null);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -76,9 +85,11 @@ const CreatorAlgorithmApp: React.FC<CreatorAlgorithmProps> = ({ onClose, session
     })
       .then(r => r.json())
       .then(({ session }) => {
-        if (!activeSessionId && session) {
-          setActiveSessionId(session.id);
-          onSessionSaved?.(session.id, title);
+        if (session) {
+          if (!activeSessionId) {
+            setActiveSessionId(session.id);
+          }
+          onSessionSaved?.(session.id || activeSessionId, title);
         }
       })
       .catch(console.error);
@@ -95,6 +106,26 @@ const CreatorAlgorithmApp: React.FC<CreatorAlgorithmProps> = ({ onClose, session
       return 'energy';
     } else {
       return 'clarity';
+    }
+  };
+
+  const handleCloseWithSave = () => {
+    if (phase > 1 || activeSessionId) {
+      setConfirmState({
+        message: 'Save this session before closing?',
+        confirmLabel: 'Yes',
+        cancelLabel: 'No',
+        onConfirm: () => {
+          setConfirmState(null);
+          onClose?.();
+        },
+        onCancel: () => {
+          setConfirmState(null);
+          onClose?.();
+        }
+      });
+    } else {
+      onClose?.();
     }
   };
 
@@ -563,14 +594,35 @@ Keep it concise and actionable.`;
         <div className="flex gap-3">
           <button
             onClick={() => {
-              if (activeSessionId && window.confirm('Delete this session or keep it as completed?')) {
-                fetch(`/api/creator-sessions/${activeSessionId}`, { method: 'DELETE' }).catch(console.error);
+              if (activeSessionId) {
+                setConfirmState({
+                  message: 'Save current session before starting over?',
+                  confirmLabel: 'Yes, Save',
+                  cancelLabel: 'No, Discard',
+                  onConfirm: () => {
+                    setConfirmState(null);
+                    setPhase(1);
+                    setContext({ stage: '', problem: '', kryptonite: '', energy: '', timeSuck: '' });
+                    setSystems([]);
+                    setSelectedSystem(null);
+                    setActiveSessionId(null);
+                  },
+                  onCancel: () => {
+                    setConfirmState(null);
+                    setPhase(1);
+                    setContext({ stage: '', problem: '', kryptonite: '', energy: '', timeSuck: '' });
+                    setSystems([]);
+                    setSelectedSystem(null);
+                    setActiveSessionId(null);
+                  }
+                });
+              } else {
+                setPhase(1);
+                setContext({ stage: '', problem: '', kryptonite: '', energy: '', timeSuck: '' });
+                setSystems([]);
+                setSelectedSystem(null);
+                setActiveSessionId(null);
               }
-              setPhase(1);
-              setContext({ stage: '', problem: '', kryptonite: '', energy: '', timeSuck: '' });
-              setSystems([]);
-              setSelectedSystem(null);
-              setActiveSessionId(null);
             }}
             className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-700 transition-colors"
           >
@@ -582,7 +634,7 @@ Keep it concise and actionable.`;
   };
 
   return (
-    <div className="h-full bg-[var(--bg)] p-4 md:p-6 overflow-y-auto">
+    <><div className="h-full bg-[var(--bg)] p-4 md:p-6 overflow-y-auto">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6 md:mb-8">
           <div className="text-center flex-1">
@@ -595,7 +647,7 @@ Keep it concise and actionable.`;
           </div>
           {onClose && (
             <button
-              onClick={onClose}
+              onClick={handleCloseWithSave}
               className="flex-shrink-0 p-2 text-[var(--softTextColor)] hover:text-[var(--textColor)] hover:bg-[var(--bgSecondary)] rounded-full transition-colors"
               aria-label="Close Creator Algorithm"
             >
@@ -615,7 +667,69 @@ Keep it concise and actionable.`;
         </div>
       </div>
     </div>
-  );
+
+      {/* Custom Confirm Dialog */}
+      {confirmState && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)'
+          }}
+          onClick={() => {
+            confirmState.onCancel?.();
+            setConfirmState(null);
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--bgPrimary)',
+              border: '1px solid var(--bgSecondary)',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '420px',
+              width: '90%',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p style={{ fontSize: '1rem', color: 'var(--textColor)', marginBottom: '20px', lineHeight: 1.5 }}>
+              {confirmState.message}
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  confirmState.onCancel?.();
+                  setConfirmState(null);
+                }}
+                style={{
+                  padding: '10px 24px', borderRadius: '10px',
+                  border: '1px solid var(--bgSecondary)',
+                  background: 'transparent', color: 'var(--softTextColor)',
+                  fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer'
+                }}
+              >
+                {confirmState.cancelLabel}
+              </button>
+              <button
+                onClick={() => {
+                  confirmState.onConfirm();
+                  setConfirmState(null);
+                }}
+                style={{
+                  padding: '10px 24px', borderRadius: '10px',
+                  border: 'none',
+                  background: '#7c4dff', color: '#fff',
+                  fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer'
+                }}
+              >
+                {confirmState.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+  </>);
 };
 
 export default CreatorAlgorithmApp;
