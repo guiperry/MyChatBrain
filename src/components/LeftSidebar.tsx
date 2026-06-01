@@ -53,9 +53,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = () => {
   const [langfusePublic, setLangfusePublic] = useState<string>("");
   const [langfuseBaseURL, setLangfuseBaseURL] = useState<string>("");
   const [langfuseHost, setLangfuseHost] = useState<string>("");
-  const [pineconeKey, setPineconeKey] = useState<string>("");
-  const [pineconeEnvironment, setPineconeEnvironment] = useState<string>("");
-  const [pineconeIndex, setPineconeIndex] = useState<string>("");
+  const [embedderUrl, setEmbedderUrl] = useState<string>("https://text-embedder-nine.vercel.app");
   const [cloudflareBaseURL, setCloudflareBaseURL] = useState<string>("");
   const [cloudflareModel, setCloudflareModel] = useState<string>("");
   const [showKeys, setShowKeys] = useState<boolean>(false);
@@ -85,9 +83,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = () => {
     setLangfusePublic(process.env.NEXT_PUBLIC_LANGFUSE_PUBLIC_KEY || "");
     setLangfuseBaseURL(process.env.NEXT_PUBLIC_LANGFUSE_BASEURL || "");
     setLangfuseHost(process.env.NEXT_PUBLIC_LANGFUSE_HOST || "");
-    setPineconeKey(process.env.NEXT_PUBLIC_PINECONE_API_KEY || "");
-    setPineconeEnvironment(process.env.NEXT_PUBLIC_PINECONE_ENVIRONMENT || "");
-    setPineconeIndex(process.env.NEXT_PUBLIC_PINECONE_INDEX || "");
+    setEmbedderUrl(process.env.NEXT_PUBLIC_EMBEDDER_URL || "https://text-embedder-nine.vercel.app");
     setCloudflareBaseURL(process.env.CLOUDFLARE_BASE_URL || "");
     setCloudflareModel(process.env.CLOUDFLARE_MODEL || "");
 
@@ -113,9 +109,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = () => {
         if (settings.langfusePublic) setLangfusePublic(settings.langfusePublic);
         if (settings.langfuseBaseURL) setLangfuseBaseURL(settings.langfuseBaseURL);
         if (settings.langfuseHost) setLangfuseHost(settings.langfuseHost);
-        if (settings.pineconeKey) setPineconeKey(settings.pineconeKey);
-        if (settings.pineconeEnvironment) setPineconeEnvironment(settings.pineconeEnvironment);
-        if (settings.pineconeIndex) setPineconeIndex(settings.pineconeIndex);
+        if (settings.embedderUrl) setEmbedderUrl(settings.embedderUrl);
       }
     } catch (error) {
       console.error("Error fetching settings:", error);
@@ -190,9 +184,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = () => {
           langfusePublic,
           langfuseBaseURL,
           langfuseHost,
-          pineconeKey,
-          pineconeEnvironment,
-          pineconeIndex,
+          embedderUrl,
           cloudflareBaseURL,
           cloudflareModel
         })
@@ -219,9 +211,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = () => {
               NEXT_PUBLIC_LANGFUSE_PUBLIC_KEY: langfusePublic,
               NEXT_PUBLIC_LANGFUSE_BASEURL: langfuseBaseURL,
               NEXT_PUBLIC_LANGFUSE_HOST: langfuseHost,
-              NEXT_PUBLIC_PINECONE_API_KEY: pineconeKey,
-              NEXT_PUBLIC_PINECONE_ENVIRONMENT: pineconeEnvironment,
-              NEXT_PUBLIC_PINECONE_INDEX: pineconeIndex
+              NEXT_PUBLIC_EMBEDDER_URL: embedderUrl
             }
           };
         }
@@ -700,16 +690,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = () => {
                   <input type="text" id="langfuseHost" value={maskString(langfuseHost)} onChange={(e) => setLangfuseHost(e.target.value)} placeholder='us.cloud.langfuse.com'/>
                 </div>
                 <div className={styles.formGroup}>
-                  <label htmlFor="pineconeKey">Pinecone API Key:</label>
-                  <input type={showKeys ? "text" : "password"} id="pineconeKey" value={maskString(pineconeKey)} onChange={(e) => setPineconeKey(e.target.value)} placeholder='...'/>
-                </div>
-                <div className={styles.formGroup}>
-                  <label htmlFor="pineconeEnvironment">Pinecone Environment:</label>
-                  <input type="text" id="pineconeEnvironment" value={maskString(pineconeEnvironment)} onChange={(e) => setPineconeEnvironment(e.target.value)} placeholder='us-west1-gcp'/>
-                </div>
-                <div className={styles.formGroup}>
-                  <label htmlFor="pineconeIndex">Pinecone Index:</label>
-                  <input type="text" id="pineconeIndex" value={maskString(pineconeIndex)} onChange={(e) => setPineconeIndex(e.target.value)} placeholder='gemini-clone'/>
+                  <label htmlFor="embedderUrl">Embedder URL:</label>
+                  <input type="text" id="embedderUrl" value={embedderUrl} onChange={(e) => setEmbedderUrl(e.target.value)} placeholder='https://text-embedder-nine.vercel.app'/>
                 </div>
 
                 <div className={styles.formGroup}>

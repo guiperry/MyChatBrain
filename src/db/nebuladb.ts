@@ -68,6 +68,7 @@ async function initCollections() {
   _collections.idea_nodes = db.collection('idea_nodes');
   _collections.error_events = db.collection('error_events');
   _collections.creator_sessions = db.collection('creator_sessions');
+  _collections.embedding_index = db.collection('embedding_index');
 
   collectionsReady = true;
   return _collections;

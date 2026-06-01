@@ -10,7 +10,6 @@
     "@langchain/core": "^0.3.43",
     "@nebula-db/core": "0.2.2",
     "@phosphor-icons/react": "^2.1.7",
-    "@pinecone-database/pinecone": "^5.1.1",
     "@radix-ui/react-popover": "^1.1.6",
     "@react-icons/all-files": "^4.1.0",
     "@themaximalist/llm.js": "^0.8.0",

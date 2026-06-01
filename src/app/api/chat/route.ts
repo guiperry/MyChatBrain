@@ -4,6 +4,8 @@ import { getNebulaDBHelper } from '@/db/nebuladb-helper';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { initializeDatabase, getCollections } from '@/db/nebuladb';
+import { getEmbedding } from '@/lib/textEmbedder';
+import { searchIndexByVector, countEntries, EmbeddingSearchResult } from '@/lib/embeddingIndex';
 
 const MODEL_ROUTES: Record<string, 'gemini' | 'deepseek' | 'openai' | 'anthropic'> = {
   'gemini-2.5-flash': 'gemini',
@@ -36,19 +38,24 @@ async function buildNoteContext(userId: string, message: string): Promise<string
   }
 }
 
-async function buildSystemPrompt(userId: string, userMessage?: string): Promise<string> {
-  try {
-    const db = await getNebulaDBHelper();
-    const [nodes, interests, goals, traits] = await Promise.all([
-      db.getRecentMemoryNodes(userId, 15),
-      db.getTopInterests(userId, 5),
-      db.getActiveGoals(userId),
-      db.getPersonalityTraits(userId),
-    ]);
+// Format a set of retrieved embedding results into a concise prompt block.
+function formatRetrievedContext(results: EmbeddingSearchResult[]): string {
+  return results
+    .map(r => `• [${r.category}] ${r.text} (relevance: ${r.similarity.toFixed(2)})`)
+    .join('\n');
+}
 
-    if (!nodes.length && !interests.length) return '';
-
-    return `You are a personal AI assistant with persistent memory about this user.
+// Fallback prompt builder used when the embedding index is empty (first session).
+async function buildRawSystemPrompt(userId: string): Promise<string> {
+  const db = await getNebulaDBHelper();
+  const [nodes, interests, goals, traits] = await Promise.all([
+    db.getRecentMemoryNodes(userId, 15),
+    db.getTopInterests(userId, 5),
+    db.getActiveGoals(userId),
+    db.getPersonalityTraits(userId),
+  ]);
+  if (!nodes.length && !interests.length) return '';
+  return `You are a personal AI assistant with persistent memory about this user.
 
 Known interests: ${interests.map((i: any) => i.topic).join(', ')}
 Active goals: ${goals.map((g: any) => g.description).join(' | ')}
@@ -57,9 +64,44 @@ Recent topics: ${nodes.map((n: any) => n.label).join(', ')}
 
 Use this context to personalize your responses naturally — don't narrate or recite it,
 just let it inform your tone, examples, and recommendations.`;
+}
+
+async function buildSystemPrompt(userId: string, userMessage?: string): Promise<string> {
+  try {
+    // If the embedding index is empty (cold start / new user), fall back to raw aggregation.
+    const count = await countEntries(userId);
+    if (count === 0 || !userMessage) {
+      return buildRawSystemPrompt(userId);
+    }
+
+    // Embed the user's message once and reuse the vector for all category searches.
+    const queryVector = await getEmbedding(userMessage);
+
+    // Retrieve the most semantically relevant items from each category in parallel.
+    const [interests, goals, traits, nodes] = await Promise.all([
+      searchIndexByVector(queryVector, userId, { categories: ['interest'],    topK: 3, threshold: 0.25 }),
+      searchIndexByVector(queryVector, userId, { categories: ['goal'],        topK: 2, threshold: 0.25 }),
+      searchIndexByVector(queryVector, userId, { categories: ['trait'],       topK: 2, threshold: 0.2  }),
+      searchIndexByVector(queryVector, userId, { categories: ['memory_node'], topK: 5, threshold: 0.25 }),
+    ]);
+
+    const allResults = [...interests, ...goals, ...traits, ...nodes];
+    if (allResults.length === 0) {
+      // Nothing above threshold — fall back to raw prompt so the model still has context.
+      return buildRawSystemPrompt(userId);
+    }
+
+    return `You are a personal AI assistant with persistent memory about this user.
+
+Relevant context for this conversation:
+${formatRetrievedContext(allResults)}
+
+Use this context to personalize your responses naturally — don't narrate or recite it,
+just let it inform your tone, examples, and recommendations.`;
   } catch (error) {
     console.error('Error building system prompt:', error);
-    return '';
+    // Degrade gracefully rather than surfacing an error to the user.
+    try { return buildRawSystemPrompt(userId); } catch { return ''; }
   }
 }
 

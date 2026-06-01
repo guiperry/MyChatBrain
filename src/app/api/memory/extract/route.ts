@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getNebulaDBHelper } from '@/db/nebuladb-helper';
 import { initializeDatabase } from '@/db/nebuladb';
+import { indexEntry } from '@/lib/embeddingIndex';
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,12 +52,17 @@ AI responded: ${aiResponse}`;
       for (const topic of extracted.topics) {
         const existing = await (db as any).findMemoryNode(topic, 'topic', parseInt(userId));
         if (!existing || existing.length === 0) {
-          await db.createMemoryNode({
+          const node = await db.createMemoryNode({
             label: topic,
             type: 'topic',
             user_id: parseInt(userId),
             metadata: JSON.stringify({ source: 'extraction', extractedAt: now })
           });
+          // Index the new node as an embedding (fire-and-forget, errors logged not thrown)
+          if (node?.id) {
+            indexEntry(`node-${node.id}`, userId, 'memory_node', topic, { type: 'topic' })
+              .catch(err => console.error('embed memory_node failed:', err));
+          }
         }
       }
     }
@@ -65,12 +71,16 @@ AI responded: ${aiResponse}`;
       for (const entity of extracted.entities) {
         const existing = await (db as any).findMemoryNode(entity, 'entity', parseInt(userId));
         if (!existing || existing.length === 0) {
-          await db.createMemoryNode({
+          const node = await db.createMemoryNode({
             label: entity,
             type: 'entity',
             user_id: parseInt(userId),
             metadata: JSON.stringify({ source: 'extraction', extractedAt: now })
           });
+          if (node?.id) {
+            indexEntry(`node-${node.id}`, userId, 'memory_node', entity, { type: 'entity' })
+              .catch(err => console.error('embed memory_node failed:', err));
+          }
         }
       }
     }
@@ -87,9 +97,13 @@ AI responded: ${aiResponse}`;
             { user_id: parseInt(userId), topic: interest.topic },
             { $set: { weight: interest.strength, last_updated: now } }
           );
+          // Re-index with updated weight
+          indexEntry(`interest-${existing.id}`, userId, 'interest', interest.topic, { weight: interest.strength, topic: interest.topic })
+            .catch(err => console.error('embed interest update failed:', err));
         } else {
+          const id = Date.now().toString() + Math.random().toString(36).slice(2);
           await (cols as any).interest_metrics.insert({
-            id: Date.now().toString() + Math.random().toString(36).slice(2),
+            id,
             user_id: parseInt(userId),
             topic: interest.topic,
             weight: interest.strength,
@@ -97,6 +111,8 @@ AI responded: ${aiResponse}`;
             last_updated: now,
             created_at: now
           });
+          indexEntry(`interest-${id}`, userId, 'interest', interest.topic, { weight: interest.strength, topic: interest.topic })
+            .catch(err => console.error('embed interest insert failed:', err));
         }
       }
     }
@@ -110,8 +126,9 @@ AI responded: ${aiResponse}`;
           status: 'active'
         });
         if (!existing) {
+          const id = Date.now().toString() + Math.random().toString(36).slice(2);
           await (cols as any).goal_metrics.insert({
-            id: Date.now().toString() + Math.random().toString(36).slice(2),
+            id,
             user_id: parseInt(userId),
             description: goalDesc,
             status: 'active',
@@ -119,6 +136,8 @@ AI responded: ${aiResponse}`;
             created_at: now,
             updated_at: now
           });
+          indexEntry(`goal-${id}`, userId, 'goal', goalDesc, { status: 'active', confidence: 0.5 })
+            .catch(err => console.error('embed goal failed:', err));
         }
       }
     }

@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       const settingKeys = [
         'port', 'geminiKey', 'modelName', 'weaviateURL', 'weaviateKey',
         'serverHost', 'langfuseSecret', 'langfusePublic', 'langfuseBaseURL',
-        'langfuseHost', 'pineconeKey', 'pineconeEnvironment', 'pineconeIndex'
+        'langfuseHost', 'embedderUrl'
       ];
 
       for (const settingKey of settingKeys) {

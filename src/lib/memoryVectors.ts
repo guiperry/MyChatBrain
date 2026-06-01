@@ -1,61 +1,27 @@
-import { db, collections } from '@/database/nebuladb';
+// Vector storage and retrieval for memory nodes — backed by the local embedding
+// index (NebulaDB + landmark-lattice-v1 embedder). All Pinecone references removed.
 
-import { Pinecone } from '@pinecone-database/pinecone';
-import { getEmbedding } from './vectorstore';
-
-// Initialize Pinecone client
-let pinecone: Pinecone | null = null;
-
-const initPinecone = async () => {
-  if (!pinecone) {
-    pinecone = new Pinecone({
-      apiKey: process.env.PINECONE_API_KEY || '',
-    });
-  }
-  return pinecone;
-};
-
-// Index name for memory nodes
-const MEMORY_INDEX = 'memory-nodes';
+import {
+  indexEntry,
+  deleteEntry,
+  searchIndex,
+  searchIndexByVector,
+  getEntry,
+} from './embeddingIndex';
 
 /**
- * Store a memory node in the vector database
- * @param nodeId The ID of the node in SQLite
- * @param label The label/text of the node
- * @param type The type of the node
- * @param userId The user ID
- * @param metadata Additional metadata
+ * Embed and store a memory node in the vector index.
+ * Identical signature to the previous Pinecone-backed version.
  */
 export async function storeNodeVector(
   nodeId: string,
   label: string,
   type: string,
   userId: string,
-  metadata: Record<string, any> = {}
-) {
+  metadata: Record<string, unknown> = {}
+): Promise<{ success: boolean; error?: unknown }> {
   try {
-    // Initialize Pinecone
-    const pinecone = await initPinecone();
-    const index = pinecone.index(MEMORY_INDEX);
-
-    // Generate embedding for the node text
-    const embedding = await getEmbedding(label);
-
-    // Store the vector in Pinecone
-    await index.upsert([
-      {
-        id: `node-${nodeId}`,
-        values: embedding,
-        metadata: {
-          nodeId,
-          label,
-          type,
-          userId,
-          ...metadata,
-        },
-      },
-    ]);
-
+    await indexEntry(`node-${nodeId}`, userId, 'memory_node', label, { type, ...metadata });
     return { success: true };
   } catch (error) {
     console.error('Error storing node vector:', error);
@@ -64,18 +30,14 @@ export async function storeNodeVector(
 }
 
 /**
- * Delete a node vector from the vector database
- * @param nodeId The ID of the node
+ * Remove a memory node from the vector index.
  */
-export async function deleteNodeVector(nodeId: string) {
+export async function deleteNodeVector(
+  nodeId: string,
+  userId: string
+): Promise<{ success: boolean; error?: unknown }> {
   try {
-    // Initialize Pinecone
-    const pinecone = await initPinecone();
-    const index = pinecone.index(MEMORY_INDEX);
-
-    // Delete the vector from Pinecone
-    await index.delete([`node-${nodeId}`]);
-
+    await deleteEntry(`node-${nodeId}`, userId);
     return { success: true };
   } catch (error) {
     console.error('Error deleting node vector:', error);
@@ -84,47 +46,33 @@ export async function deleteNodeVector(nodeId: string) {
 }
 
 /**
- * Find similar nodes based on text query
- * @param query The text query
- * @param userId The user ID
- * @param limit The maximum number of results to return
- * @param threshold The similarity threshold (0-1)
+ * Find memory nodes semantically similar to a text query.
  */
 export async function findSimilarNodes(
   query: string,
   userId: string,
   limit: number = 10,
-  threshold: number = 0.7
-) {
+  threshold: number = 0.3
+): Promise<{
+  success: boolean;
+  results?: { nodeId: string; label: string; type: string; similarity: number }[];
+  error?: unknown;
+}> {
   try {
-    // Initialize Pinecone
-    const pinecone = await initPinecone();
-    const index = pinecone.index(MEMORY_INDEX);
-
-    // Generate embedding for the query
-    const embedding = await getEmbedding(query);
-
-    // Query Pinecone for similar vectors
-    const queryResponse = await index.query({
-      vector: embedding,
+    const hits = await searchIndex(query, userId, {
+      categories: ['memory_node'],
       topK: limit,
-      includeMetadata: true,
-      filter: {
-        userId: { $eq: userId },
-      },
+      threshold,
     });
-
-    // Filter results by similarity threshold and format the response
-    const results = queryResponse.matches
-      .filter((match: any) => match.score && match.score >= threshold)
-      .map((match: any) => ({
-        nodeId: match.metadata?.nodeId,
-        label: match.metadata?.label,
-        type: match.metadata?.type,
-        similarity: match.score,
-      }));
-
-    return { success: true, results };
+    return {
+      success: true,
+      results: hits.map(h => ({
+        nodeId: h.id.replace(/^node-/, ''),
+        label: h.text,
+        type: String(h.metadata.type ?? ''),
+        similarity: h.similarity,
+      })),
+    };
   } catch (error) {
     console.error('Error finding similar nodes:', error);
     return { success: false, error };
@@ -132,59 +80,42 @@ export async function findSimilarNodes(
 }
 
 /**
- * Find semantically related nodes for a given node
- * @param nodeId The ID of the node
- * @param userId The user ID
- * @param limit The maximum number of results to return
- * @param threshold The similarity threshold (0-1)
+ * Find memory nodes semantically related to a given node, using that node's
+ * stored vector rather than re-embedding (no extra API call needed).
  */
 export async function findRelatedNodes(
   nodeId: string,
   userId: string,
   limit: number = 5,
-  threshold: number = 0.75
-) {
+  threshold: number = 0.4
+): Promise<{
+  success: boolean;
+  results?: { nodeId: string; label: string; type: string; similarity: number }[];
+  error?: unknown;
+}> {
   try {
-    // Initialize Pinecone
-    const pinecone = await initPinecone();
-    const index = pinecone.index(MEMORY_INDEX);
-
-    // First get the vector for the node
-    const nodeVector = await index.fetch([`node-${nodeId}`]);
-    const nodeId_key = `node-${nodeId}`;
-
-    if (!nodeVector.records || !nodeVector.records[nodeId_key]) {
-      return { success: false, error: 'Node vector not found' };
+    const entryId = `node-${nodeId}`;
+    const entry = await getEntry(entryId, userId);
+    if (!entry) {
+      return { success: false, error: 'Node vector not found in index' };
     }
 
-    const vector = nodeVector.records[nodeId_key].values;
-
-    // Query Pinecone for similar vectors
-    const queryResponse = await index.query({
-      vector: vector,
-      topK: limit + 1, // Add 1 to account for the node itself
-      includeMetadata: true,
-      filter: {
-        userId: { $eq: userId },
-      },
+    const hits = await searchIndexByVector(entry.vector, userId, {
+      categories: ['memory_node'],
+      topK: limit,
+      threshold,
+      excludeId: entryId,
     });
 
-    // Filter out the node itself and apply threshold
-    const results = queryResponse.matches
-      .filter(
-        (match: any) =>
-          match.metadata?.nodeId !== nodeId &&
-          match.score &&
-          match.score >= threshold
-      )
-      .map((match: any) => ({
-        nodeId: match.metadata?.nodeId,
-        label: match.metadata?.label,
-        type: match.metadata?.type,
-        similarity: match.score,
-      }));
-
-    return { success: true, results };
+    return {
+      success: true,
+      results: hits.map(h => ({
+        nodeId: h.id.replace(/^node-/, ''),
+        label: h.text,
+        type: String(h.metadata.type ?? ''),
+        similarity: h.similarity,
+      })),
+    };
   } catch (error) {
     console.error('Error finding related nodes:', error);
     return { success: false, error };

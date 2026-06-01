@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyChatBrain — Embeddings Refactor Plan</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3352;
+      --accent: #6c8eff;
+      --accent2: #a78bfa;
+      --green: #34d399;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --text: #e2e8f0;
+      --muted: #8892b0;
+      --code-bg: #0d1117;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      line-height: 1.7;
+      padding: 2rem;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2rem;
+      margin-bottom: 2.5rem;
+    }
+    header h1 { font-size: 2rem; font-weight: 700; color: var(--accent); }
+    header p { color: var(--muted); margin-top: 0.5rem; }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .badge-new    { background: #1a3a2a; color: var(--green); border: 1px solid #2d6b4f; }
+    .badge-mod    { background: #1a2a3a; color: var(--accent); border: 1px solid #2d4f6b; }
+    .badge-del    { background: #3a1a1a; color: var(--red);   border: 1px solid #6b2d2d; }
+    .badge-keep   { background: #2a2a1a; color: var(--yellow); border: 1px solid #6b5a2d; }
+    section { margin-bottom: 3rem; }
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--accent2);
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 { font-size: 1rem; font-weight: 600; color: var(--text); margin: 1.5rem 0 0.5rem; }
+    p  { color: var(--muted); margin-bottom: 0.75rem; }
+    ul, ol { padding-left: 1.5rem; color: var(--muted); }
+    li { margin-bottom: 0.4rem; }
+    li strong { color: var(--text); }
+    code {
+      background: var(--code-bg);
+      color: #7dd3fc;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.85em;
+    }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: #c9d1d9;
+    }
+    pre .kw  { color: #ff79c6; }
+    pre .str { color: #f1fa8c; }
+    pre .cm  { color: #6272a4; }
+    pre .fn  { color: #50fa7b; }
+    pre .ty  { color: #8be9fd; }
+    pre .num { color: #bd93f9; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .card-title { font-weight: 600; font-size: 0.95rem; color: var(--text); }
+    .card-path  { font-family: monospace; font-size: 0.78rem; color: var(--accent); }
+    .step-grid {
+      display: grid;
+      grid-template-columns: 3rem 1fr;
+      gap: 0 1.5rem;
+      align-items: start;
+      margin-bottom: 1.5rem;
+    }
+    .step-num {
+      width: 3rem;
+      height: 3rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .step-body h3 { margin-top: 0.25rem; }
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .flow-item {
+      display: flex;
+      align-items: stretch;
+      gap: 1rem;
+    }
+    .flow-line {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+      width: 2rem;
+    }
+    .flow-dot  { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); margin-top: 4px; flex-shrink: 0; }
+    .flow-bar  { width: 2px; background: var(--border); flex: 1; margin: 4px auto; }
+    .flow-content { padding-bottom: 1.5rem; flex: 1; }
+    .flow-content p { margin: 0; font-size: 0.9rem; }
+    .api-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .api-table th {
+      background: var(--surface2);
+      color: var(--accent);
+      padding: 0.6rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+    .api-table td {
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      vertical-align: top;
+    }
+    .api-table tr:last-child td { border-bottom: none; }
+    .api-table code { background: var(--code-bg); }
+    .method {
+      display: inline-block;
+      padding: 0.1rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 0.75rem;
+      font-family: monospace;
+    }
+    .method-post { background: #1a3a1a; color: #34d399; border: 1px solid #2d6b4f; }
+    .method-get  { background: #1a2a3a; color: #60a5fa; border: 1px solid #2d4f6b; }
+    .diff-old { background: #3a1a1a; color: var(--red);   padding: 0.1rem 0.4rem; border-radius: 3px; }
+    .diff-new { background: #1a3a2a; color: var(--green); padding: 0.1rem 0.4rem; border-radius: 3px; }
+    .warn {
+      background: #2a2000;
+      border: 1px solid #6b5a2d;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--yellow);
+      font-size: 0.88rem;
+      margin: 1rem 0;
+    }
+    .info {
+      background: #001a3a;
+      border: 1px solid #2d4f6b;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: #7dd3fc;
+      font-size: 0.88rem;
+      margin: 1rem 0;
+    }
+    footer {
+      margin-top: 4rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>MyChatBrain — Embeddings Refactor Plan</h1>
+    <p>Replace Pinecone + placeholder vectors with the custom <strong>landmark-lattice-v1</strong> embedder at <code>https://text-embedder-nine.vercel.app</code>. Simultaneously migrate latent system-prompt context from raw text assembly to an indexed semantic retrieval pipeline.</p>
+    <p style="margin-top:0.75rem; font-size:0.82rem;">Generated: 2026-06-01 &nbsp;·&nbsp; Branch: main &nbsp;·&nbsp; Embedder model: landmark-lattice-v1 (768-dim)</p>
+  </header>
+
+  <!-- ═══ SECTION 0: WHY ═══ -->
+  <section>
+    <h2>0 — Motivation &amp; Goals</h2>
+    <div class="card">
+      <p><strong>Current state problems:</strong></p>
+      <ul>
+        <li><strong>Fake embeddings.</strong> <code>vectorstore.ts:getEmbedding()</code> generates seeded random 1536-dim vectors. Similarity search returns semantically meaningless results.</li>
+        <li><strong>Pinecone unused in practice.</strong> API keys are empty in all env files; the Pinecone integration has never run in production.</li>
+        <li><strong>Raw-text system prompts.</strong> <code>buildSystemPrompt()</code> assembles the 15 most-recent nodes + top-5 interests without any semantic relevance to the user's actual message.</li>
+        <li><strong>Token waste.</strong> Injecting all interests, goals, traits, and topics as raw sentences burns tokens on context that may be irrelevant to the turn.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p><strong>After-refactor state:</strong></p>
+      <ul>
+        <li>All embeddings generated by <code>https://text-embedder-nine.vercel.app</code> (768-dim, landmark-lattice-v1).</li>
+        <li>Pinecone dependency completely removed. Embedding index lives in NebulaDB (<code>embedding_index</code> collection), persisted in Vercel Blob.</li>
+        <li>System prompt context is <em>semantically retrieved</em>: user message is embedded → top-K most relevant persona items from each category are fetched and injected.</li>
+        <li>Every new interest, goal, trait, and memory node extracted from a conversation is immediately indexed as an embedding.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══ SECTION 1: EMBEDDER API ═══ -->
+  <section>
+    <h2>1 — Custom Embedder API Reference</h2>
+    <p>Base URL: <code>https://text-embedder-nine.vercel.app</code> &nbsp;·&nbsp; All requests: <code>Content-Type: application/json</code></p>
+    <table class="api-table">
+      <thead>
+        <tr><th>Endpoint</th><th>Method</th><th>Request Body</th><th>Response Shape</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>/embed</code></td>
+          <td><span class="method method-post">POST</span></td>
+          <td><code>{ "text": "..." }</code></td>
+          <td><code>{ embedding: number[768], dimensions: 768, model: string, token_count: number }</code></td>
+        </tr>
+        <tr>
+          <td><code>/embed/batch</code></td>
+          <td><span class="method method-post">POST</span></td>
+          <td><code>{ "texts": ["...", "..."] }</code> — max 128</td>
+          <td><code>{ results: [{ index, embedding, dimensions, token_count }], model, count }</code></td>
+        </tr>
+        <tr>
+          <td><code>/similarity</code></td>
+          <td><span class="method method-post">POST</span></td>
+          <td><code>{ "text_a": "...", "text_b": "..." }</code></td>
+          <td><code>{ similarity: number [0,1], model: string }</code></td>
+        </tr>
+        <tr>
+          <td><code>/health</code></td>
+          <td><span class="method method-get">GET</span></td>
+          <td>—</td>
+          <td>Model metadata JSON</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="info">
+      Embedding vectors are 768-element fixed-point int32 arrays. Each element is in <code>[0, 10000]</code>. Standard cosine-similarity applies directly — no normalization preprocessing is required.
+    </div>
+  </section>
+
+  <!-- ═══ SECTION 2: FILE MAP ═══ -->
+  <section>
+    <h2>2 — File-by-File Change Map</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-new">New</span>
+        <span class="card-path">src/lib/textEmbedder.ts</span>
+      </div>
+      <p>HTTP client for the custom embedder. Exports <code>getEmbedding(text)</code>, <code>getBatchEmbeddings(texts)</code>, and <code>getTextSimilarity(a, b)</code>. This is the single source of truth for all embedding generation — no other file should call the embedder API directly.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-new">New</span>
+        <span class="card-path">src/lib/embeddingIndex.ts</span>
+      </div>
+      <p>Local vector index backed by NebulaDB's <code>embedding_index</code> collection (persisted in Vercel Blob). Provides <code>indexEntry()</code>, <code>deleteEntry()</code>, <code>searchIndex()</code>, and <code>reindexUserData()</code>. Replaces all Pinecone read/write operations.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-new">New</span>
+        <span class="card-path">src/app/api/memory/reindex/route.ts</span>
+      </div>
+      <p>POST endpoint that triggers full re-indexing of all persona data for the authenticated user. Useful after bulk imports, onboarding, or schema migrations.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-mod">Modified</span>
+        <span class="card-path">src/db/nebuladb.ts</span>
+      </div>
+      <p>Add <code>embedding_index</code> collection registration inside <code>initCollections()</code>. No schema migration needed — NebulaDB is schemaless.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-mod">Modified</span>
+        <span class="card-path">src/lib/memoryVectors.ts</span>
+      </div>
+      <p>Remove Pinecone client. Re-implement <code>storeNodeVector()</code>, <code>deleteNodeVector()</code>, <code>findSimilarNodes()</code>, and <code>findRelatedNodes()</code> using <code>embeddingIndex.ts</code>. Function signatures stay identical so callers need no changes.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-mod">Modified</span>
+        <span class="card-path">src/lib/vectorstore.ts</span>
+      </div>
+      <p>Replace the seeded-random placeholder <code>getEmbedding()</code> with a thin re-export from <code>textEmbedder.ts</code>. All other classes (<code>LocalVectorStore</code>, <code>cosineSimilarity</code>, etc.) are kept unchanged.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-mod">Modified</span>
+        <span class="card-path">src/app/api/chat/route.ts</span>
+      </div>
+      <p>Rewrite <code>buildSystemPrompt()</code> to embed the user's message and semantically retrieve the most contextually relevant items from each category (interests, goals, traits, memory nodes). Raw-text aggregation replaced with ranked semantic injection.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-mod">Modified</span>
+        <span class="card-path">src/app/api/memory/extract/route.ts</span>
+      </div>
+      <p>After persisting extracted interests, goals, and memory nodes, call <code>indexEntry()</code> for each new or updated item so the embedding index stays current without needing a full reindex.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-mod">Modified</span>
+        <span class="card-path">src/app/api/getenv/route.ts</span>
+      </div>
+      <p>Remove <code>pineconeKey</code>, <code>pineconeEnvironment</code>, <code>pineconeIndex</code> from the <code>settingKeys</code> array. Add <code>embedderUrl</code> (defaults to the public service URL).</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-mod">Modified</span>
+        <span class="card-path">src/components/LeftSidebar.tsx</span>
+      </div>
+      <p>Remove the three Pinecone config inputs. Add a single <strong>Embedder URL</strong> field (pre-filled with the default) for optional override.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-del">Delete</span>
+        <span class="card-path">src/lib/pinecone.ts</span>
+      </div>
+      <p>No longer needed. <code>getPineconeIndex()</code> has no callers outside of <code>memoryVectors.ts</code> which is being rewritten. Safe to remove entirely.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-del">Delete</span>
+        <span class="card-path">@pinecone-database/pinecone (package.json)</span>
+      </div>
+      <p>Remove the dependency and uninstall. Saves ~2.4 MB from the deployment bundle.</p>
+    </div>
+  </section>
+
+  <!-- ═══ SECTION 3: STEP BY STEP ═══ -->
+  <section>
+    <h2>3 — Step-by-Step Implementation Order</h2>
+
+    <div class="step-grid">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Create <code>src/lib/textEmbedder.ts</code></h3>
+        <p>Build the HTTP client first — everything else depends on it. Implement single embed, batch embed, and similarity endpoints. Hard-code the base URL as a constant with an env-var override (<code>NEXT_PUBLIC_EMBEDDER_URL</code>). Add a lightweight in-process LRU cache keyed on text so identical strings aren't re-embedded within the same request lifecycle.</p>
+      </div>
+    </div>
+
+    <div class="step-grid">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Register <code>embedding_index</code> collection in <code>nebuladb.ts</code></h3>
+        <p>Add one line inside <code>initCollections()</code>: <code>_collections.embedding_index = db.collection('embedding_index');</code>. On first boot, NebulaDB creates the collection in Vercel Blob automatically.</p>
+      </div>
+    </div>
+
+    <div class="step-grid">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Create <code>src/lib/embeddingIndex.ts</code></h3>
+        <p>Implement the local vector index layer over NebulaDB. The collection document shape is:</p>
+        <pre>{
+  id:         <span class="str">"interest-abc123"</span>,   <span class="cm">// prefixed source id</span>
+  userId:     <span class="str">"42"</span>,
+  category:   <span class="str">"interest"</span>,           <span class="cm">// interest | goal | trait | memory_node | note</span>
+  text:       <span class="str">"machine learning"</span>,   <span class="cm">// the original text that was embedded</span>
+  vector:     [<span class="num">4823</span>, <span class="num">7201</span>, ...],     <span class="cm">// 768-element int32 array</span>
+  metadata:   { weight: <span class="num">0.87</span> },
+  created_at: <span class="str">"2026-06-01T..."</span>,
+  updated_at: <span class="str">"2026-06-01T..."</span>
+}</pre>
+        <p>The <code>searchIndex()</code> function loads all documents for a user (filtered by optional category list), computes cosine similarity between the query vector and each stored vector, and returns top-K results above a configurable threshold.</p>
+        <div class="warn">
+          NebulaDB does not support approximate nearest-neighbour indexes. All similarity lookups are exact linear scans. This is acceptable at the scale of individual user persona data (typically &lt;500 entries per user). If a user accumulates thousands of entries, consider batching or caching the scan results.
+        </div>
+      </div>
+    </div>
+
+    <div class="step-grid">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>Update <code>src/lib/vectorstore.ts</code> — replace <code>getEmbedding</code></h3>
+        <p>Delete the seeded-random implementation (lines 120–149) and replace with:</p>
+        <pre><span class="kw">export</span> { <span class="fn">getEmbedding</span> } <span class="kw">from</span> <span class="str">'./textEmbedder'</span>;</pre>
+        <p>All other exports (<code>LocalVectorStore</code>, <code>cosineSimilarity</code>, <code>normalize</code>, etc.) are kept. <code>cosineSimilarity</code> in particular is now used by <code>embeddingIndex.ts</code> for local similarity scoring.</p>
+      </div>
+    </div>
+
+    <div class="step-grid">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h3>Rewrite <code>src/lib/memoryVectors.ts</code> — remove Pinecone</h3>
+        <p>Replace the Pinecone client with calls to <code>embeddingIndex.ts</code>. All four exported functions keep identical signatures so callers need no changes:</p>
+        <ul>
+          <li><code>storeNodeVector(nodeId, label, type, userId, metadata)</code> → <code>indexEntry(`node-${nodeId}`, userId, 'memory_node', label, { type, ...metadata })</code></li>
+          <li><code>deleteNodeVector(nodeId)</code> → <code>deleteEntry(`node-${nodeId}`, userId)</code></li>
+          <li><code>findSimilarNodes(query, userId, limit, threshold)</code> → <code>searchIndex(query, userId, { categories: ['memory_node'], topK: limit, threshold })</code></li>
+          <li><code>findRelatedNodes(nodeId, userId, limit, threshold)</code> → fetch the entry's stored text, re-embed, search excluding the source node</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step-grid">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <h3>Rewrite <code>buildSystemPrompt()</code> in <code>chat/route.ts</code> — semantic retrieval</h3>
+        <p>The new flow:</p>
+        <div class="flow">
+          <div class="flow-item">
+            <div class="flow-line"><div class="flow-dot"></div><div class="flow-bar"></div></div>
+            <div class="flow-content"><p><strong>Embed the user's message</strong> via <code>getEmbedding(userMessage)</code></p></div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-line"><div class="flow-dot"></div><div class="flow-bar"></div></div>
+            <div class="flow-content"><p><strong>Query each category</strong> in parallel: top-3 interests, top-2 goals, top-2 traits, top-5 memory nodes — all ranked by cosine similarity to the user message vector</p></div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-line"><div class="flow-dot"></div><div class="flow-bar"></div></div>
+            <div class="flow-content"><p><strong>Assemble compact prompt</strong> from retrieved items only — items below the similarity threshold are silently omitted rather than padded with irrelevant context</p></div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-line"><div class="flow-dot"></div></div>
+            <div class="flow-content"><p><strong>Fallback</strong>: if the embedding index has no entries for this user (first session, fresh install), fall back to the old raw-text aggregation path so the app keeps working before any indexing has occurred</p></div>
+          </div>
+        </div>
+        <p style="margin-top:0.5rem;">The resulting system prompt is shorter, more contextually relevant, and semantically matched to each individual conversation turn.</p>
+      </div>
+    </div>
+
+    <div class="step-grid">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <h3>Update <code>memory/extract/route.ts</code> — index after extraction</h3>
+        <p>After persisting each extracted interest, goal, or memory node to NebulaDB, call <code>indexEntry()</code> immediately. This keeps the embedding index current without requiring a manual reindex after every conversation.</p>
+        <div class="info">
+          These <code>indexEntry()</code> calls run in the background extraction request (already fire-and-forget from the chat route), so they add no latency to the user-facing chat response.
+        </div>
+      </div>
+    </div>
+
+    <div class="step-grid">
+      <div class="step-num">8</div>
+      <div class="step-body">
+        <h3>Create <code>src/app/api/memory/reindex/route.ts</code></h3>
+        <p>A POST endpoint that calls <code>reindexUserData(userId)</code> to bulk-embed all existing persona data. Used for initial migration of existing users, or after bulk data imports. Protected by the same auth cookie as all other memory routes.</p>
+        <pre><span class="kw">POST</span> /api/memory/reindex
+<span class="cm">→ { indexed: number, errors: number }</span></pre>
+      </div>
+    </div>
+
+    <div class="step-grid">
+      <div class="step-num">9</div>
+      <div class="step-body">
+        <h3>Remove Pinecone — cleanup</h3>
+        <ul>
+          <li>Delete <code>src/lib/pinecone.ts</code></li>
+          <li>Remove <code>@pinecone-database/pinecone</code> from <code>package.json</code> and run <code>npm uninstall @pinecone-database/pinecone</code></li>
+          <li>Remove <code>pineconeKey</code>, <code>pineconeEnvironment</code>, <code>pineconeIndex</code> from <code>getenv/route.ts</code> setting keys</li>
+          <li>Update <code>LeftSidebar.tsx</code>: remove the three Pinecone fields, add optional <strong>Embedder URL</strong> override field</li>
+          <li>Remove <code>src/types/pinecone.d.ts</code> if it exists</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step-grid">
+      <div class="step-num">10</div>
+      <div class="step-body">
+        <h3>Trigger initial reindex for existing users</h3>
+        <p>On first deploy, call <code>POST /api/memory/reindex</code> for any existing authenticated user so their persona data is indexed. This can be done manually via the settings panel, or automatically on first chat request when the embedding index is empty (cold-start detection).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SECTION 4: DATA FLOW DIAGRAM ═══ -->
+  <section>
+    <h2>4 — New Data Flow</h2>
+    <pre><span class="cm">── Chat Request ──────────────────────────────────────────────────────────</span>
+
+User message
+  │
+  ├─ getEmbedding(message)          ← textEmbedder.ts → /embed
+  │    └─ queryVector: number[768]
+  │
+  ├─ searchIndex(queryVector, userId, { categories: ['interest'], topK: 3 })
+  ├─ searchIndex(queryVector, userId, { categories: ['goal'],     topK: 2 })
+  ├─ searchIndex(queryVector, userId, { categories: ['trait'],    topK: 2 })
+  └─ searchIndex(queryVector, userId, { categories: ['memory_node'], topK: 5 })
+       └─ all run in parallel via Promise.all()
+            └─ ranked by cosine similarity, threshold 0.3
+
+  ↓  semantically relevant context items only
+  buildSystemPrompt() → compact structured string
+
+  → routeToProvider(provider, message, systemPrompt)
+  → response to user
+
+<span class="cm">── Background Extraction (fire-and-forget) ───────────────────────────────</span>
+
+  POST /api/memory/extract
+    ├─ LLM extracts: topics, interests, goals, sentiment
+    ├─ Persist to NebulaDB collections (unchanged)
+    └─ For each new item:
+         indexEntry(id, userId, category, text, metadata)
+           └─ getEmbedding(text) → textEmbedder.ts → /embed
+           └─ upsert to embedding_index collection in NebulaDB
+
+<span class="cm">── Reindex (on-demand) ────────────────────────────────────────────────────</span>
+
+  POST /api/memory/reindex
+    └─ reindexUserData(userId)
+         ├─ load all interest_metrics, goal_metrics, personality_traits, memory_nodes
+         └─ getBatchEmbeddings(texts)  ← /embed/batch (up to 128 at a time)
+              └─ upsert all to embedding_index</pre>
+  </section>
+
+  <!-- ═══ SECTION 5: ENV VARS ═══ -->
+  <section>
+    <h2>5 — Environment Variable Changes</h2>
+    <table class="api-table">
+      <thead>
+        <tr><th>Variable</th><th>Action</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>NEXT_PUBLIC_PINECONE_API_KEY</code></td>
+          <td><span class="diff-old">Remove</span></td>
+          <td>No longer used</td>
+        </tr>
+        <tr>
+          <td><code>PINECONE_API_KEY</code></td>
+          <td><span class="diff-old">Remove</span></td>
+          <td>No longer used</td>
+        </tr>
+        <tr>
+          <td><code>NEXT_PUBLIC_PINECONE_ENVIRONMENT</code></td>
+          <td><span class="diff-old">Remove</span></td>
+          <td>No longer used</td>
+        </tr>
+        <tr>
+          <td><code>NEXT_PUBLIC_PINECONE_INDEX</code></td>
+          <td><span class="diff-old">Remove</span></td>
+          <td>No longer used</td>
+        </tr>
+        <tr>
+          <td><code>NEXT_PUBLIC_EMBEDDER_URL</code></td>
+          <td><span class="diff-new">Add (optional)</span></td>
+          <td>Defaults to <code>https://text-embedder-nine.vercel.app</code>. Override only if self-hosting the embedder.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══ SECTION 6: SYSTEM PROMPT FORMAT ═══ -->
+  <section>
+    <h2>6 — New System Prompt Format</h2>
+    <p>Before (raw text, always the same items regardless of conversation topic):</p>
+    <pre><span class="cm">You are a personal AI assistant with persistent memory about this user.
+
+Known interests: machine learning, cooking, travel, finance, gaming
+Active goals: Learn Python | Lose 10 lbs | Save for vacation
+Personality: openness:high, conscientiousness:medium
+Recent topics: neural networks, Python, gym, budgeting, Tokyo, sushi
+
+Use this context to personalize your responses naturally...</span></pre>
+
+    <p>After (semantically retrieved, matched to the user's current message):</p>
+    <pre><span class="cm">You are a personal AI assistant with persistent memory about this user.
+
+Relevant context for this conversation:
+• [interest] machine learning (relevance: 0.94)
+• [interest] Python programming (relevance: 0.91)
+• [goal] Learn Python — active (relevance: 0.89)
+• [memory] neural networks discussion (relevance: 0.87)
+• [memory] PyTorch tutorial question (relevance: 0.82)
+
+Use this context to personalize your responses naturally — don't narrate or
+recite it, just let it inform your tone, examples, and recommendations.</span></pre>
+    <div class="info">
+      Relevance scores are cosine similarities between the user's current message embedding and each stored item's embedding. Items scoring below the configured threshold (default: 0.3) are never included, no matter how many entries exist in the index.
+    </div>
+  </section>
+
+  <!-- ═══ SECTION 7: IMPLEMENTATION FILES ═══ -->
+  <section>
+    <h2>7 — Implementation File Index</h2>
+    <p>The following files are produced as part of this refactor. See the companion implementation file for complete source.</p>
+    <table class="api-table">
+      <thead>
+        <tr><th>File</th><th>Action</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>src/lib/textEmbedder.ts</code></td><td><span class="diff-new">New</span></td><td>HTTP client for landmark-lattice-v1 embedder</td></tr>
+        <tr><td><code>src/lib/embeddingIndex.ts</code></td><td><span class="diff-new">New</span></td><td>NebulaDB-backed vector index (Pinecone replacement)</td></tr>
+        <tr><td><code>src/app/api/memory/reindex/route.ts</code></td><td><span class="diff-new">New</span></td><td>Full reindex endpoint</td></tr>
+        <tr><td><code>src/db/nebuladb.ts</code></td><td><span class="diff-old">Modified</span></td><td>Register <code>embedding_index</code> collection</td></tr>
+        <tr><td><code>src/lib/vectorstore.ts</code></td><td><span class="diff-old">Modified</span></td><td>Replace placeholder <code>getEmbedding</code></td></tr>
+        <tr><td><code>src/lib/memoryVectors.ts</code></td><td><span class="diff-old">Modified</span></td><td>Pinecone → embeddingIndex</td></tr>
+        <tr><td><code>src/app/api/chat/route.ts</code></td><td><span class="diff-old">Modified</span></td><td>Semantic system prompt assembly</td></tr>
+        <tr><td><code>src/app/api/memory/extract/route.ts</code></td><td><span class="diff-old">Modified</span></td><td>Index after extraction</td></tr>
+        <tr><td><code>src/app/api/getenv/route.ts</code></td><td><span class="diff-old">Modified</span></td><td>Remove Pinecone keys, add embedderUrl</td></tr>
+        <tr><td><code>src/lib/pinecone.ts</code></td><td><span class="badge badge-del">Deleted</span></td><td>Entire file removed</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>
+    MyChatBrain Embeddings Refactor Plan &nbsp;·&nbsp; 2026-06-01
+  </footer>
+
+</div>
+</body>
+</html>

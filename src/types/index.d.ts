@@ -78,14 +78,6 @@ declare module 'clsx' {
   export default function clsx(...inputs: any[]): string;
 }
 
-// @pinecone-database/pinecone
-declare module '@pinecone-database/pinecone' {
-  export class Pinecone {
-    constructor(options: { apiKey: string });
-    Index(indexName: string): any;
-  }
-}
-
 // react-icons/ri
 declare module 'react-icons/ri' {
   export const RiUser3Fill: React.ComponentType<any>;
