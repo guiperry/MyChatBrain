@@ -215,13 +215,20 @@ const ChatBody: React.FC<ChatBodyProps> = ({ currentModel: externalModel }) => {
     };
   }, []);
 
-  // Get chat response — Gemini primary, DeepSeek fallback (handled server-side)
+  // Get chat response — routes through server-side model switching
   const getChatResponse = async (prompt: string): Promise<string> => {
     try {
+      const modelMap: Record<string, string> = {
+        'gemini': 'gemini-2.5-flash',
+        'modeldeployer': 'deepseek-chat'
+      };
       const chatResponse: Response = await fetch('/api/chat', {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: prompt })
+        body: JSON.stringify({
+          message: prompt,
+          model: modelMap[currentModel] || 'gemini-2.5-flash'
+        })
       });
 
       const chatJson: ChatResponse = await chatResponse.json();
@@ -451,6 +458,13 @@ useEffect(() => {
                     </div>
                       {message.type === 'bot' && (
                         <div className="messageActions">
+                          <span className="modelBadge" style={{
+                            fontSize: '0.65rem', background: 'var(--bgSecondary)',
+                            padding: '2px 6px', borderRadius: '4px',
+                            color: 'var(--softTextColor)', marginRight: '4px'
+                          }}>
+                            {currentModel === 'modeldeployer' ? 'DeepSeek' : 'Gemini'}
+                          </span>
                           <button
                             className="notateButton"
                             onClick={() => handleNotate(message.text)}

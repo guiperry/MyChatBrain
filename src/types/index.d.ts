@@ -105,6 +105,13 @@ declare module 'langfuse' {
   }
 }
 
+// @vercel/blob
+declare module '@vercel/blob' {
+  export function put(path: string, data: any, options?: { access?: string; addRandomSuffix?: boolean; allowOverwrite?: boolean }): Promise<any>;
+  export function list(options?: { prefix?: string; limit?: number }): Promise<{ blobs: Array<{ url: string; pathname: string; size: number }> }>;
+  export function del(url: string): Promise<void>;
+}
+
 // @google/generative-ai
 declare module '@google/generative-ai' {
   export class GoogleGenerativeAI {

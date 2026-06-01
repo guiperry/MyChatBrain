@@ -171,6 +171,36 @@ export interface IdeaNodes {
   updated_at: string;
 }
 
+export interface CreatorSessions {
+  id?: string;
+  user_id: string;
+  title: string;
+  phase: number;
+  context: {
+    stage: string;
+    problem: string;
+    kryptonite: string;
+    energy: string;
+    timeSuck: string;
+  };
+  systems: Array<{
+    name: string;
+    philosophy: string;
+    leverageScore: number;
+    cognitiveLoad: 'Low' | 'Medium' | 'High';
+    algorithm: string[];
+    dailyRitual: string[];
+    successMetric: string;
+    whenToUse: string;
+    warningSigns: string;
+  }>;
+  selectedSystem: number | null;
+  constraint: string;
+  aiInsights: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const TABLES = {
   USERS: 'users',
   SETTINGS: 'settings',
@@ -190,7 +220,8 @@ export const TABLES = {
   PERSONALITY_TRAITS: 'personality_traits',
   ERROR_EVENTS: 'error_events',
   TOOL_USAGES: 'tool_usages',
-  IDEA_NODES: 'idea_nodes'
+  IDEA_NODES: 'idea_nodes',
+  CREATOR_SESSIONS: 'creator_sessions'
 } as const;
 
 // Export types with original Drizzle-style names for compatibility

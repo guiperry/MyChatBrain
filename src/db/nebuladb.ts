@@ -23,7 +23,6 @@ class BlobAdapter implements Adapter {
     await put(BLOB_DB_PATH, JSON.stringify(data), {
       access: 'public',
       addRandomSuffix: false,
-      allowOverwrite: true,
     });
   }
 }
@@ -68,6 +67,7 @@ async function initCollections() {
   _collections.goal_metrics = db.collection('goal_metrics');
   _collections.idea_nodes = db.collection('idea_nodes');
   _collections.error_events = db.collection('error_events');
+  _collections.creator_sessions = db.collection('creator_sessions');
 
   collectionsReady = true;
   return _collections;

@@ -332,6 +332,55 @@ export class NebulaDBHelper {
     });
   }
 
+  // Creator sessions operations
+  async getCreatorSessions(userId: number) {
+    const cols = await getTypedCollections();
+    return await (cols.creator_sessions as any).find({ user_id: userId.toString() }).toArray() ?? [];
+  }
+
+  async upsertCreatorSession(session: any) {
+    const cols = await getTypedCollections();
+    if (session.id) {
+      const existing = await cols.creator_sessions.findOne({ id: session.id });
+      if (existing) {
+        await cols.creator_sessions.update({ id: session.id }, { $set: { ...session, updatedAt: new Date().toISOString() } });
+        return session;
+      }
+    }
+    const id = 'cs-' + Date.now().toString();
+    const doc = { ...session, id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    await cols.creator_sessions.insert(doc);
+    return doc;
+  }
+
+  async deleteCreatorSession(id: string) {
+    const cols = await getTypedCollections();
+    return cols.creator_sessions.delete({ id });
+  }
+
+  // Memory context operations
+  async getRecentMemoryNodes(userId: string, limit: number) {
+    const cols = await getTypedCollections();
+    const nodes = await (cols.memory_nodes as any).find({ user_id: userId }).sort({ created_at: -1 }).toArray() ?? [];
+    return nodes.slice(0, limit);
+  }
+
+  async getTopInterests(userId: string, limit: number) {
+    const cols = await getTypedCollections();
+    const interests = await (cols.interest_metrics as any).find({ user_id: parseInt(userId) }).toArray() ?? [];
+    return interests.sort((a: any, b: any) => (b.weight || 0) - (a.weight || 0)).slice(0, limit);
+  }
+
+  async getActiveGoals(userId: string) {
+    const cols = await getTypedCollections();
+    return await (cols.goal_metrics as any).find({ user_id: parseInt(userId), status: 'active' }).toArray() ?? [];
+  }
+
+  async getPersonalityTraits(userId: string) {
+    const cols = await getTypedCollections();
+    return await (cols.personality_traits as any).find({ user_id: parseInt(userId) }).toArray() ?? [];
+  }
+
   // Helper method to get next ID for a collection
   private async getNextId(collectionName: string): Promise<number> {
     const cols = await getTypedCollections();

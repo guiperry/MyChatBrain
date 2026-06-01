@@ -1,3 +1,4 @@
+import os from 'os';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   cn,
@@ -13,12 +14,29 @@ import {
   indexGitHubRepo,
 } from './utils';
 
-// Mock external dependencies
-vi.mock('@google/generative-ai');
-vi.mock('langfuse');
-
-const mockAxios = { get: vi.fn() };
+const mockAxios = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock('axios', () => ({ default: mockAxios }));
+
+const mockLangfuse = vi.hoisted(() => ({
+  Langfuse: vi.fn(() => ({
+    trace: vi.fn(() => ({
+      span: vi.fn(() => ({
+        end: vi.fn(),
+      })),
+      update: vi.fn(),
+    })),
+  })),
+  default: vi.fn(() => ({
+    shutdown: vi.fn(),
+    span: vi.fn(() => ({
+      end: vi.fn(),
+    })),
+    update: vi.fn(),
+  })),
+}));
+vi.mock('langfuse', () => mockLangfuse);
+
+vi.mock('@google/generative-ai');
 
 describe('utils', () => {
   beforeEach(() => {
@@ -40,32 +58,36 @@ describe('utils', () => {
   });
 
   describe('getAppDataDir', () => {
+    beforeEach(() => {
+      vi.spyOn(os, 'platform');
+      vi.spyOn(os, 'homedir');
+    });
+
     it('should return correct path for linux', () => {
-      const originalPlatform = process.platform;
-      Object.defineProperty(process, 'platform', { value: 'linux' });
+      vi.mocked(os.platform).mockReturnValue('linux');
+      vi.mocked(os.homedir).mockReturnValue('/home/user');
       expect(getAppDataDir()).toBe('/home/user/.local/share/my-chat-brain-v2');
-      Object.defineProperty(process, 'platform', { value: originalPlatform });
     });
 
     it('should return correct path for darwin', () => {
-      const originalPlatform = process.platform;
-      Object.defineProperty(process, 'platform', { value: 'darwin' });
+      vi.mocked(os.platform).mockReturnValue('darwin');
+      vi.mocked(os.homedir).mockReturnValue('/Users/user');
       expect(getAppDataDir()).toMatch(/Library\/Application Support\/My Chat Brain v2/);
-      Object.defineProperty(process, 'platform', { value: originalPlatform });
     });
 
     it('should return correct path for win32', () => {
-      const originalPlatform = process.platform;
-      Object.defineProperty(process, 'platform', { value: 'win32' });
-      expect(getAppDataDir()).toMatch(/AppData\\Roaming\\My Chat Brain v2/);
-      Object.defineProperty(process, 'platform', { value: originalPlatform });
+      vi.mocked(os.platform).mockReturnValue('win32');
+      vi.mocked(os.homedir).mockReturnValue('C:\\Users\\user');
+      expect(getAppDataDir()).toMatch(/AppData[/\\\\]Roaming[/\\\\]My Chat Brain v2/);
     });
   });
 
   describe('extractGitHubURL', () => {
-    it('should extract GitHub URL from text', () => {
-      expect(extractGitHubURL('Check this repo: https://github.com/user/repo')).toBe('https://github.com/user/repo');
-      expect(extractGitHubURL('No URL here')).toBeNull();
+    it('should extract GitHub URL from text', async () => {
+      const result = await extractGitHubURL('Check this repo: https://github.com/user/repo');
+      expect(result).toBe('https://github.com/user/repo');
+      const nullResult = await extractGitHubURL('No URL here');
+      expect(nullResult).toBeNull();
     });
   });
 
@@ -171,7 +193,10 @@ describe('utils', () => {
 
   describe('indexGitHubRepo', () => {
     it('should index GitHub repo', async () => {
-      vi.mocked(listFiles).mockResolvedValue([]);
+      mockAxios.get.mockResolvedValue({
+        status: 200,
+        data: { tree: [] },
+      });
 
       const result = await indexGitHubRepo('url', 'key', 'model', 'wurl', 'wkey', 'class');
       expect(result).toEqual([]);

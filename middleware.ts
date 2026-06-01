@@ -1,47 +1,84 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// For app-internal JWT, we just check if it looks valid
+// In production, use a proper JWKS endpoint
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    if (payload.exp) {
+      return payload.exp * 1000 < Date.now();
+    }
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 export function middleware(request: NextRequest) {
   // Get token from cookies
   const token = request.cookies.get('gemini-auth-token')?.value;
-  
+
+  const protectedApis = [
+    '/api/auth/me',
+    '/api/auth/change-password',
+    '/api/auth/logout',
+    '/api/deleteChat',
+    '/api/setenv',
+    '/api/onboarding',
+    '/api/memory',
+    '/api/creator-sessions',
+  ];
+
   // Check if the request is for an API route that requires authentication
-  if (request.nextUrl.pathname.startsWith('/api/auth/me') ||
-      request.nextUrl.pathname.startsWith('/api/auth/change-password') ||
-      request.nextUrl.pathname.startsWith('/api/auth/logout') ||
-      request.nextUrl.pathname.startsWith('/api/deleteChat') ||
-      request.nextUrl.pathname.startsWith('/api/setenv')) {
-    
-    // If no token, return 401
+  if (protectedApis.some(p => request.nextUrl.pathname.startsWith(p))) {
     if (!token) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
-    // If there is a token, continue
+    // If token is expired, try refresh
+    if (isTokenExpired(token)) {
+      return NextResponse.json(
+        { error: 'Token expired, please re-login' },
+        { status: 401 }
+      );
+    }
     return NextResponse.next();
   }
-  
+
+  // Allow forgot-password and reset-password without auth
+  if (request.nextUrl.pathname.startsWith('/api/auth/forgot-password') ||
+      request.nextUrl.pathname.startsWith('/api/auth/reset-password')) {
+    return NextResponse.next();
+  }
+
   // Check if the request is for a page that requires authentication
   if (request.nextUrl.pathname === '/') {
-    // If no token, redirect to login
     if (!token) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
-    // If there is a token, continue
+    if (isTokenExpired(token)) {
+      const response = NextResponse.redirect(new URL('/login?expired=true', request.url));
+      response.cookies.delete('gemini-auth-token');
+      return response;
+    }
     return NextResponse.next();
   }
-  
+
   // Check if the request is for login/register pages and user is already logged in
   if (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register') {
-    // If token exists, redirect to home
-    if (token) {
+    if (token && !isTokenExpired(token)) {
       return NextResponse.redirect(new URL('/', request.url));
     }
+    if (token && isTokenExpired(token)) {
+      const response = NextResponse.next();
+      response.cookies.delete('gemini-auth-token');
+      return response;
+    }
   }
-  
-  // If there is no token, continue
+
   return NextResponse.next();
 }
 

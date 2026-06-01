@@ -12,6 +12,13 @@ interface NoteItem {
   createdAt: Date;
 }
 
+interface CreatorSessionItem {
+  id: string;
+  title: string;
+  phase: number;
+  updatedAt: string;
+}
+
 interface RightSideBarProps {
   onOpenObsidian: () => void;
   onOpenMemory: () => void;
@@ -22,6 +29,8 @@ interface RightSideBarProps {
   notes?: NoteItem[];
   onNoteSelect?: (note: NoteItem) => void;
   onNotesChange?: (notes: NoteItem[]) => void;
+  creatorSessions?: CreatorSessionItem[];
+  onCreatorSessionSelect?: (session: CreatorSessionItem) => void;
 }
 
 const RightSideBar: React.FC<RightSideBarProps> = ({
@@ -33,7 +42,9 @@ const RightSideBar: React.FC<RightSideBarProps> = ({
   isOpen = false,
   notes = [],
   onNoteSelect = () => {},
-  onNotesChange = () => {}
+  onNotesChange = () => {},
+  creatorSessions = [],
+  onCreatorSessionSelect = () => {}
 }) => {
   console.log('RightSideBar rendering, isOpen:', isOpen);
 
@@ -41,6 +52,17 @@ const RightSideBar: React.FC<RightSideBarProps> = ({
   useEffect(() => {
     console.log('RightSideBar received notes:', notes.length, 'notes');
   }, [notes]);
+
+  const handleDeleteSession = async (sessionId: string) => {
+    if (!window.confirm('Delete this session?')) return;
+    try {
+      await fetch(`/api/creator-sessions/${sessionId}`, { method: 'DELETE' });
+      // Reload page to refresh sessions list
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+    }
+  };
 
 
 
@@ -172,6 +194,43 @@ const RightSideBar: React.FC<RightSideBarProps> = ({
           <span className={styles.buttonIcon}><Sparkle size={16} /></span>
           <span className={styles.buttonText}>Creator Algorithm</span>
         </button>
+
+        {creatorSessions.length > 0 && (
+          <div style={{ marginTop: '16px' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--softTextColor)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Saved Sessions
+            </div>
+            {creatorSessions
+              .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+              .map(session => (
+                <div
+                  key={session.id}
+                  onClick={() => onCreatorSessionSelect(session)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '8px', cursor: 'pointer', borderRadius: '8px',
+                    marginBottom: '4px', transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bgSecondary)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <Sparkle size={14} />
+                  <span style={{ flex: 1, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {session.title}
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: session.phase === 3 ? 'var(--green)' : 'var(--accent2)', fontWeight: 600 }}>
+                    {session.phase === 3 ? '✓ Done' : `P${session.phase}`}
+                  </span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteSession(session.id); }}
+                    style={{ background: 'none', border: 'none', color: 'var(--softTextColor)', cursor: 'pointer', padding: '2px' }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+          </div>
+        )}
 
         {notes.length > 0 ? (
           <div className="notesList">

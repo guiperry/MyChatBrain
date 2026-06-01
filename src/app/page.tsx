@@ -10,11 +10,13 @@ import CreatorAlgorithm from '../components/CreatorAlgorithm';
 import ObsidianPanel from '../components/ObsidianPanel';
 import MemoryPanel from '../components/MemoryPanel';
 import PersonaAnalyticsSidebar from '../components/PersonaAnalyticsSidebar';
+import OnboardingModal from '../components/OnboardingModal';
 import styles from './page.module.css';
 
 export default function Home() {
   // State to track if the app is ready
   const [isAppReady, setIsAppReady] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Check if the app is ready and hide the initial loader when it is
   const router = useRouter();
@@ -53,6 +55,19 @@ export default function Home() {
         }
         console.log('Health check passed');
 
+        // Check onboarding status
+        try {
+          const onboardingRes = await fetch('/api/onboarding');
+          if (onboardingRes.ok) {
+            const onboardingData = await onboardingRes.json();
+            if (!onboardingData.onboardingComplete && isMounted) {
+              setShowOnboarding(true);
+            }
+          }
+        } catch {
+          // Silently fail, onboarding is optional
+        }
+
         // App is ready
         console.log('App initialization complete');
         if (isMounted) {
@@ -82,6 +97,7 @@ export default function Home() {
   const [notes, setNotes] = useState<Array<{id: string; title: string; content: string; createdAt: Date}>>([]);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const [activeCenterView, setActiveCenterView] = useState<'chat' | 'creator'>('chat');
+  const [selectedCreatorSessionId, setSelectedCreatorSessionId] = useState<string | null>(null);
 
   // Custom setNotes with logging
   const setNotesWithLogging = useCallback((newNotes: Array<{id: string; title: string; content: string; createdAt: Date}> | ((prevNotes: Array<{id: string; title: string; content: string; createdAt: Date}>) => Array<{id: string; title: string; content: string; createdAt: Date}>)) => {
@@ -89,6 +105,7 @@ export default function Home() {
     setNotes(newNotes);
   }, []);
   const [currentNote, setCurrentNote] = useState<{id: string; title: string; content: string; createdAt: Date} | null>(null);
+  const [creatorSessions, setCreatorSessions] = useState<Array<{id: string; title: string; phase: number; updatedAt: string}>>([]);
 
   // Function to load notes from the database
   const loadNotes = async () => {
@@ -155,6 +172,28 @@ export default function Home() {
     return [];
   };
 
+  // Load creator sessions
+  const loadCreatorSessions = async () => {
+    try {
+      const response = await fetch('/api/creator-sessions', { cache: 'no-cache' });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.sessions) {
+          setCreatorSessions(
+            data.sessions.map((s: any) => ({
+              id: s.id,
+              title: s.title || 'Creator Session',
+              phase: s.phase || 1,
+              updatedAt: s.updatedAt || s.createdAt
+            }))
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error loading creator sessions:', error);
+    }
+  };
+
   // Listen for model change events from child components
   useEffect(() => {
     const handleModelChange = (event: CustomEvent) => {
@@ -175,6 +214,7 @@ export default function Home() {
     const initialLoad = async () => {
       console.log('Initial notes load');
       await loadNotes();
+      await loadCreatorSessions();
     };
 
     initialLoad();
@@ -205,7 +245,14 @@ export default function Home() {
       <LeftSidebar />
       <div className={styles.mainContent}>
         {activeCenterView === 'creator' ? (
-          <CreatorAlgorithm onClose={() => setActiveCenterView('chat')} />
+          <CreatorAlgorithm
+            key={selectedCreatorSessionId || 'new'}
+            onClose={() => { setActiveCenterView('chat'); setSelectedCreatorSessionId(null); }}
+            sessionId={selectedCreatorSessionId || undefined}
+            onSessionSaved={async () => {
+              await loadCreatorSessions();
+            }}
+          />
         ) : selectedModel === 'gemini' ? (
           <ChatBody currentModel={selectedModel} />
         ) : (
@@ -225,12 +272,19 @@ export default function Home() {
           setIsPersonaAnalyticsOpen(true);
         }}
         onOpenCreatorAlgorithm={() => {
+          setSelectedCreatorSessionId(null);
           setActiveCenterView('creator');
           setIsRightSidebarOpen(false);
         }}
         onClose={() => setIsRightSidebarOpen(false)}
         isOpen={isRightSidebarOpen}
         notes={notes}
+        creatorSessions={creatorSessions}
+        onCreatorSessionSelect={(session) => {
+          setSelectedCreatorSessionId(session.id);
+          setActiveCenterView('creator');
+          setIsRightSidebarOpen(false);
+        }}
         onNoteSelect={async (note) => {
           console.log('Note selected:', {
             id: note.id,
@@ -371,6 +425,11 @@ export default function Home() {
       <PersonaAnalyticsSidebar
         isOpen={isPersonaAnalyticsOpen}
         onClose={() => setIsPersonaAnalyticsOpen(false)}
+      />
+
+      <OnboardingModal
+        open={showOnboarding}
+        onComplete={() => setShowOnboarding(false)}
       />
     </div>
   );

@@ -386,3 +386,35 @@ export type CreateIdeaNodeInput = {
   status: 'draft' | 'refined' | 'implemented';
   content?: string;
 };
+
+export interface CreatorSession {
+  id: string;
+  user_id: string;
+  title: string;
+  phase: number;
+  context: {
+    stage: string;
+    problem: string;
+    kryptonite: string;
+    energy: string;
+    timeSuck: string;
+  };
+  systems: AlgorithmicSystem[];
+  selectedSystem: number | null;
+  constraint: string;
+  aiInsights: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AlgorithmicSystem {
+  name: string;
+  philosophy: string;
+  leverageScore: number;
+  cognitiveLoad: 'Low' | 'Medium' | 'High';
+  algorithm: string[];
+  dailyRitual: string[];
+  successMetric: string;
+  whenToUse: string;
+  warningSigns: string;
+}

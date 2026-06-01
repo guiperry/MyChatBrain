@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronRight, CheckCircle2, AlertCircle, TrendingUp, Clock, Zap, X } from 'lucide-react';
 
 interface UserContext {
@@ -23,9 +23,11 @@ interface AlgorithmicSystem {
 
 interface CreatorAlgorithmProps {
   onClose?: () => void;
+  sessionId?: string;
+  onSessionSaved?: (id: string, title: string) => void;
 }
 
-const CreatorAlgorithmApp: React.FC<CreatorAlgorithmProps> = ({ onClose }) => {
+const CreatorAlgorithmApp: React.FC<CreatorAlgorithmProps> = ({ onClose, sessionId, onSessionSaved }) => {
   const [phase, setPhase] = useState<number>(1);
   const [context, setContext] = useState<UserContext>({
     stage: '',
@@ -39,6 +41,48 @@ const CreatorAlgorithmApp: React.FC<CreatorAlgorithmProps> = ({ onClose }) => {
   const [constraint, setConstraint] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [aiInsights, setAiInsights] = useState<string>('');
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(sessionId ?? null);
+  const [isLoadingSession, setIsLoadingSession] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    setIsLoadingSession(true);
+    fetch('/api/creator-sessions')
+      .then(r => r.json())
+      .then(({ sessions }) => {
+        const s = sessions.find((s: any) => s.id === sessionId);
+        if (!s) return;
+        setPhase(s.phase);
+        setContext(s.context);
+        setSystems(s.systems);
+        setSelectedSystem(s.selectedSystem);
+        setConstraint(s.constraint);
+        setAiInsights(s.aiInsights);
+      })
+      .catch(console.error)
+      .finally(() => setIsLoadingSession(false));
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (phase === 1 && !activeSessionId) return;
+    const title = context.problem?.slice(0, 60) || 'Creator Session';
+    fetch('/api/creator-sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: activeSessionId,
+        title, phase, context, systems, selectedSystem, constraint, aiInsights
+      })
+    })
+      .then(r => r.json())
+      .then(({ session }) => {
+        if (!activeSessionId && session) {
+          setActiveSessionId(session.id);
+          onSessionSaved?.(session.id, title);
+        }
+      })
+      .catch(console.error);
+  }, [phase, systems, selectedSystem, aiInsights]);
 
   const analyzeContext = (ctx: UserContext): string => {
     const text = `${ctx.problem} ${ctx.kryptonite} ${ctx.timeSuck}`.toLowerCase();
@@ -516,17 +560,23 @@ Keep it concise and actionable.`;
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setPhase(1);
-            setContext({ stage: '', problem: '', kryptonite: '', energy: '', timeSuck: '' });
-            setSystems([]);
-            setSelectedSystem(null);
-          }}
-          className="w-full bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-700 transition-colors"
-        >
-          Start Over with New Context
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => {
+              if (activeSessionId && window.confirm('Delete this session or keep it as completed?')) {
+                fetch(`/api/creator-sessions/${activeSessionId}`, { method: 'DELETE' }).catch(console.error);
+              }
+              setPhase(1);
+              setContext({ stage: '', problem: '', kryptonite: '', energy: '', timeSuck: '' });
+              setSystems([]);
+              setSelectedSystem(null);
+              setActiveSessionId(null);
+            }}
+            className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+          >
+            Start Over with New Context
+          </button>
+        </div>
       </div>
     );
   };

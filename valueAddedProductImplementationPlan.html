@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyChatBrain — Value-Added Product Implementation Plan</title>
+  <style>
+    :root {
+      --bg: #0a0d14;
+      --surface: #111520;
+      --surface2: #1a1f2e;
+      --surface3: #222840;
+      --border: #2a3050;
+      --accent: #6c63ff;
+      --accent2: #a78bfa;
+      --green: #34d399;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --blue: #60a5fa;
+      --orange: #fb923c;
+      --pink: #f472b6;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --code-bg: #0d1117;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10,13,20,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand { font-weight: 700; font-size: 1rem; color: var(--accent2); }
+    .nav-links { display: flex; gap: 24px; }
+    .nav-links a {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ── Page wrapper ── */
+    .page { max-width: 1000px; margin: 0 auto; padding: 56px 32px 100px; }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #111520 0%, #1a1f2e 60%, #1f1640 100%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 56px 48px;
+      margin-bottom: 64px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%);
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -60px; left: -60px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(52,211,153,0.08) 0%, transparent 70%);
+    }
+    .hero-eyebrow {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: 2.6rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+    .hero h1 span { color: var(--accent2); }
+    .hero-sub {
+      font-size: 1.1rem;
+      color: var(--muted);
+      max-width: 620px;
+      margin-bottom: 32px;
+    }
+    .hero-stats {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent2);
+    }
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Section ── */
+    .section { margin-bottom: 80px; }
+
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 10px;
+    }
+    h2 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 32px 0 10px;
+    }
+    h4 {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--accent2);
+      margin: 20px 0 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    p { color: var(--muted); margin-bottom: 14px; font-size: 0.96rem; }
+    strong { color: var(--text); }
+
+    /* ── Feature cards ── */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin: 28px 0;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .feature-card:hover { border-color: var(--accent); }
+    .feature-card.priority-critical { border-left: 3px solid var(--red); }
+    .feature-card.priority-high     { border-left: 3px solid var(--yellow); }
+    .feature-card.priority-medium   { border-left: 3px solid var(--blue); }
+    .feature-card.priority-new      { border-left: 3px solid var(--pink); }
+    .card-icon {
+      font-size: 1.6rem;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .card-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .card-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+    .badge-critical { background: rgba(248,113,113,0.15); color: var(--red); }
+    .badge-high     { background: rgba(251,191,36,0.15);  color: var(--yellow); }
+    .badge-medium   { background: rgba(96,165,250,0.15);  color: var(--blue); }
+    .badge-new      { background: rgba(244,114,182,0.15); color: var(--pink); }
+
+    /* ── Implementation blocks ── */
+    .impl-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin: 28px 0;
+      overflow: hidden;
+    }
+    .impl-header {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .impl-num {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+    .num-red    { background: rgba(248,113,113,0.2); color: var(--red); }
+    .num-yellow { background: rgba(251,191,36,0.2);  color: var(--yellow); }
+    .num-blue   { background: rgba(96,165,250,0.2);  color: var(--blue); }
+    .num-green  { background: rgba(52,211,153,0.2);  color: var(--green); }
+    .num-pink   { background: rgba(244,114,182,0.2); color: var(--pink); }
+    .num-orange { background: rgba(251,146,60,0.2);  color: var(--orange); }
+    .impl-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .impl-subtitle {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .impl-body { padding: 28px; }
+
+    /* ── Code blocks ── */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin: 16px 0;
+      overflow: hidden;
+    }
+    .code-label {
+      background: var(--surface3);
+      border-bottom: 1px solid var(--border);
+      padding: 7px 16px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+    pre {
+      padding: 18px 20px;
+      overflow-x: auto;
+      font-size: 0.83rem;
+      line-height: 1.65;
+    }
+    code {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      color: #e2e8f0;
+    }
+    code.inline {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 0.83em;
+      color: var(--accent2);
+    }
+
+    .hl-kw   { color: #c792ea; }
+    .hl-str  { color: #c3e88d; }
+    .hl-cmt  { color: #546e7a; font-style: italic; }
+    .hl-fn   { color: #82aaff; }
+    .hl-ty   { color: #ffcb6b; }
+    .hl-var  { color: #f78c6c; }
+    .hl-num  { color: #f78c6c; }
+
+    /* ── Step list ── */
+    .step-list { list-style: none; padding: 0; counter-reset: steps; }
+    .step-list li {
+      counter-increment: steps;
+      display: flex;
+      gap: 16px;
+      margin-bottom: 18px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .step-list li::before {
+      content: counter(steps);
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      color: var(--accent2);
+      font-weight: 700;
+      font-size: 0.78rem;
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* ── Callouts ── */
+    .callout {
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin: 20px 0;
+      font-size: 0.92rem;
+      border-left: 3px solid;
+    }
+    .callout.info    { background: rgba(108,99,255,0.08); border-color: var(--accent); }
+    .callout.warn    { background: rgba(251,191,36,0.08); border-color: var(--yellow); }
+    .callout.success { background: rgba(52,211,153,0.08); border-color: var(--green); }
+    .callout-title {
+      font-weight: 700;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 5px;
+    }
+    .callout.info    .callout-title { color: var(--accent2); }
+    .callout.warn    .callout-title { color: var(--yellow); }
+    .callout.success .callout-title { color: var(--green); }
+
+    /* ── Table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 20px 0;
+    }
+    th {
+      background: var(--surface2);
+      text-align: left;
+      padding: 10px 14px;
+      color: var(--accent2);
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border-bottom: 2px solid var(--border);
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    td strong { color: var(--text); }
+
+    /* ── Timeline ── */
+    .timeline { position: relative; padding-left: 32px; margin: 28px 0; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 10px; top: 0; bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--accent), var(--green));
+    }
+    .tl-item {
+      position: relative;
+      margin-bottom: 32px;
+    }
+    .tl-item::before {
+      content: '';
+      position: absolute;
+      left: -26px; top: 6px;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      border: 2px solid;
+    }
+    .tl-item.sprint1::before { border-color: var(--red);    background: rgba(248,113,113,0.3); }
+    .tl-item.sprint2::before { border-color: var(--yellow); background: rgba(251,191,36,0.3); }
+    .tl-item.sprint3::before { border-color: var(--blue);   background: rgba(96,165,250,0.3); }
+    .tl-item.sprint4::before { border-color: var(--green);  background: rgba(52,211,153,0.3); }
+    .tl-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+    .sprint1 .tl-label { color: var(--red); }
+    .sprint2 .tl-label { color: var(--yellow); }
+    .sprint3 .tl-label { color: var(--blue); }
+    .sprint4 .tl-label { color: var(--green); }
+    .tl-title {
+      font-weight: 700;
+      color: var(--text);
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+    .tl-tasks {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.7;
+    }
+
+    /* ── File path ── */
+    .file {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: var(--green);
+      margin: 4px 2px;
+    }
+
+    /* ── Divider ── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 60px 0;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">MyChatBrain</div>
+  <div class="nav-links">
+    <a href="#overview">Overview</a>
+    <a href="#creator">Creator Algorithm</a>
+    <a href="#memory">Memory Loop</a>
+    <a href="#models">Model Switching</a>
+    <a href="#rag">Notes & RAG</a>
+    <a href="#onboarding">Onboarding</a>
+    <a href="#roadmap">Roadmap</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-eyebrow">Implementation Plan · 2026</div>
+    <h1>MyChatBrain<br /><span>Value-Added Product Plan</span></h1>
+    <p class="hero-sub">
+      Six prioritized implementation tracks to transform MyChatBrain from a chat UI into
+      a persistent, personalized AI assistant that genuinely knows who you are.
+    </p>
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-num">6</div>
+        <div class="stat-label">Feature Tracks</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">4</div>
+        <div class="stat-label">Sprints</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">16</div>
+        <div class="stat-label">DB Collections</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">5</div>
+        <div class="stat-label">AI Providers</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overview -->
+  <div class="section" id="overview">
+    <div class="section-label">Strategic Overview</div>
+    <h2>What We're Building Toward</h2>
+    <p>
+      MyChatBrain already has a sophisticated data model — 16 database collections covering memory nodes, persona traits,
+      goals, sentiment, and ideas. The core gap is that <strong>none of this data feeds back into the AI responses</strong>.
+      The six tracks below close that loop and add the Creator Algorithm persistence feature.
+    </p>
+
+    <div class="feature-grid">
+      <div class="feature-card priority-new">
+        <div class="card-badge badge-new">New Feature</div>
+        <div class="card-icon">⚡</div>
+        <div class="card-title">Creator Algorithm Persistence</div>
+        <div class="card-desc">Save and resume Creator Algorithm sessions. Show saved sessions in the right sidebar, resumable on click with full phase/state restoration.</div>
+      </div>
+      <div class="feature-card priority-critical">
+        <div class="card-badge badge-critical">Critical</div>
+        <div class="card-icon">🧠</div>
+        <div class="card-title">Memory → Chat Loop</div>
+        <div class="card-desc">Inject the user's memory graph and persona into every chat prompt so the AI actually knows who it's talking to.</div>
+      </div>
+      <div class="feature-card priority-critical">
+        <div class="card-badge badge-critical">Critical</div>
+        <div class="card-icon">🔄</div>
+        <div class="card-title">Auto Memory Extraction</div>
+        <div class="card-desc">Automatically extract entities, topics, interests, and goals from every conversation and write them into memory_nodes/edges.</div>
+      </div>
+      <div class="feature-card priority-high">
+        <div class="card-badge badge-high">High</div>
+        <div class="card-icon">🔀</div>
+        <div class="card-title">Live Model Switching</div>
+        <div class="card-desc">Let users pick Gemini, Claude, DeepSeek, or GPT per-session from the UI. The backend infrastructure already exists.</div>
+      </div>
+      <div class="feature-card priority-high">
+        <div class="card-badge badge-high">High</div>
+        <div class="card-icon">📚</div>
+        <div class="card-title">Notes → Chat Context</div>
+        <div class="card-desc">Make saved notes retrievable from the chat input. "Based on my note about X…" should inject that note into the prompt context.</div>
+      </div>
+      <div class="feature-card priority-medium">
+        <div class="card-badge badge-medium">Medium</div>
+        <div class="card-icon">📄</div>
+        <div class="card-title">Document RAG</div>
+        <div class="card-desc">Complete the Pinecone RAG pipeline — already installed, not wired to chat. Upload PDFs/docs and chat with them.</div>
+      </div>
+      <div class="feature-card priority-medium">
+        <div class="card-badge badge-medium">Medium</div>
+        <div class="card-icon">🚀</div>
+        <div class="card-title">Onboarding Flow</div>
+        <div class="card-desc">A 3-step first-run experience that explains the memory/persona features and primes the initial memory graph.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- TRACK 1: Creator Algorithm -->
+  <div class="section" id="creator">
+    <div class="section-label">Track 1 · New Feature</div>
+    <h2>Creator Algorithm — Session Persistence</h2>
+    <p>
+      Currently the Creator Algorithm is a 3-phase React state machine with no persistence.
+      Navigating away or refreshing the page loses all progress. This track adds a full
+      save/resume/list cycle backed by NebulaDB and surfaced in the right sidebar.
+    </p>
+
+    <div class="callout warn">
+      <div class="callout-title">Root Cause</div>
+      All state lives in <code class="inline">useState</code> inside <code class="inline">CreatorAlgorithmApp</code>.
+      There is no API route, no DB collection, and no sidebar integration for sessions.
+      The fix requires adding a DB collection, two API routes, updating the component, and updating the sidebar.
+    </div>
+
+    <div class="impl-block">
+      <div class="impl-header">
+        <div class="impl-num num-pink">1</div>
+        <div>
+          <div class="impl-title">Add <code style="color:#a78bfa;font-size:0.9em">creator_sessions</code> collection to NebulaDB</div>
+          <div class="impl-subtitle">src/db/nebuladb.ts</div>
+        </div>
+      </div>
+      <div class="impl-body">
+        <p>Add one line to <code class="inline">initCollections()</code> alongside the existing collections:</p>
+        <div class="code-block">
+          <div class="code-label">src/db/nebuladb.ts — initCollections()</div>
+          <pre><code><span class="hl-cmt">// Add after _collections.idea_nodes = ...</span>
+_collections.<span class="hl-var">creator_sessions</span> = db.<span class="hl-fn">collection</span>(<span class="hl-str">'creator_sessions'</span>);</code></pre>
+        </div>
+        <p>The document shape for each saved session:</p>
+        <div class="code-block">
+          <div class="code-label">creator_session document schema</div>
+          <pre><code>{
+  <span class="hl-var">id</span>:            <span class="hl-str">"uuid or timestamp"</span>,
+  <span class="hl-var">user_id</span>:       <span class="hl-str">"from JWT token"</span>,
+  <span class="hl-var">title</span>:         <span class="hl-str">"Auto-generated from context.problem"</span>,
+  <span class="hl-var">phase</span>:         <span class="hl-num">1</span> | <span class="hl-num">2</span> | <span class="hl-num">3</span>,
+  <span class="hl-var">context</span>:       { stage, problem, kryptonite, energy, timeSuck },
+  <span class="hl-var">systems</span>:       AlgorithmicSystem[],
+  <span class="hl-var">selectedSystem</span>: <span class="hl-num">number</span> | <span class="hl-kw">null</span>,
+  <span class="hl-var">constraint</span>:    <span class="hl-str">"focus"</span> | <span class="hl-str">"time"</span> | <span class="hl-str">"energy"</span> | <span class="hl-str">"clarity"</span>,
+  <span class="hl-var">aiInsights</span>:    <span class="hl-str">"string"</span>,
+  <span class="hl-var">createdAt</span>:     <span class="hl-str">"ISO string"</span>,
+  <span class="hl-var">updatedAt</span>:     <span class="hl-str">"ISO string"</span>
+}</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="impl-block">
+      <div class="impl-header">
+        <div class="impl-num num-pink">2</div>
+        <div>
+          <div class="impl-title">Create API routes for Creator sessions</div>
+          <div class="impl-subtitle">src/app/api/creator-sessions/route.ts &amp; [id]/route.ts</div>
+        </div>
+      </div>
+      <div class="impl-body">
+        <p>Two files needed — one for list/create, one for update/delete by ID.</p>
+
+        <div class="code-block">
+          <div class="code-label">src/app/api/creator-sessions/route.ts</div>
+          <pre><code><span class="hl-kw">import</span> { NextRequest, NextResponse } <span class="hl-kw">from</span> <span class="hl-str">'next/server'</span>;
+<span class="hl-kw">import</span> { getNebulaDBHelper } <span class="hl-kw">from</span> <span class="hl-str">'@/db/nebuladb-helper'</span>;
+<span class="hl-kw">import</span> { verifyToken } <span class="hl-kw">from</span> <span class="hl-str">'@/lib/auth'</span>;
+<span class="hl-kw">import</span> { cookies } <span class="hl-kw">from</span> <span class="hl-str">'next/headers'</span>;
+<span class="hl-kw">import</span> { initializeDatabase } <span class="hl-kw">from</span> <span class="hl-str">'@/db/nebuladb'</span>;
+
+<span class="hl-cmt">// GET /api/creator-sessions — list all sessions for current user</span>
+<span class="hl-kw">export async function</span> <span class="hl-fn">GET</span>(request: <span class="hl-ty">NextRequest</span>) {
+  <span class="hl-kw">const</span> token = cookies().<span class="hl-fn">get</span>(<span class="hl-str">'gemini-auth-token'</span>)?.<span class="hl-var">value</span>;
+  <span class="hl-kw">const</span> decoded = token ? <span class="hl-fn">verifyToken</span>(token) : <span class="hl-kw">null</span>;
+  <span class="hl-kw">await</span> <span class="hl-fn">initializeDatabase</span>();
+  <span class="hl-kw">const</span> db = <span class="hl-kw">await</span> <span class="hl-fn">getNebulaDBHelper</span>();
+  <span class="hl-kw">const</span> sessions = <span class="hl-kw">await</span> db.<span class="hl-fn">getCreatorSessions</span>(decoded?.userId ?? <span class="hl-num">0</span>);
+  <span class="hl-kw">return</span> NextResponse.<span class="hl-fn">json</span>({ sessions });
+}
+
+<span class="hl-cmt">// POST /api/creator-sessions — create or update a session</span>
+<span class="hl-kw">export async function</span> <span class="hl-fn">POST</span>(request: <span class="hl-ty">NextRequest</span>) {
+  <span class="hl-kw">const</span> token = cookies().<span class="hl-fn">get</span>(<span class="hl-str">'gemini-auth-token'</span>)?.<span class="hl-var">value</span>;
+  <span class="hl-kw">const</span> decoded = token ? <span class="hl-fn">verifyToken</span>(token) : <span class="hl-kw">null</span>;
+  <span class="hl-kw">const</span> body = <span class="hl-kw">await</span> request.<span class="hl-fn">json</span>();
+  <span class="hl-kw">await</span> <span class="hl-fn">initializeDatabase</span>();
+  <span class="hl-kw">const</span> db = <span class="hl-kw">await</span> <span class="hl-fn">getNebulaDBHelper</span>();
+
+  <span class="hl-kw">const</span> session = <span class="hl-kw">await</span> db.<span class="hl-fn">upsertCreatorSession</span>({
+    ...body,
+    user_id: decoded?.userId ?? <span class="hl-num">0</span>,
+    updatedAt: <span class="hl-kw">new</span> <span class="hl-ty">Date</span>().<span class="hl-fn">toISOString</span>()
+  });
+  <span class="hl-kw">return</span> NextResponse.<span class="hl-fn">json</span>({ session }, { status: <span class="hl-num">201</span> });
+}</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-label">src/app/api/creator-sessions/[id]/route.ts</div>
+          <pre><code><span class="hl-cmt">// DELETE /api/creator-sessions/[id]</span>
+<span class="hl-kw">export async function</span> <span class="hl-fn">DELETE</span>(request: <span class="hl-ty">NextRequest</span>, { params }: { params: { id: <span class="hl-ty">string</span> } }) {
+  <span class="hl-kw">await</span> <span class="hl-fn">initializeDatabase</span>();
+  <span class="hl-kw">const</span> db = <span class="hl-kw">await</span> <span class="hl-fn">getNebulaDBHelper</span>();
+  <span class="hl-kw">await</span> db.<span class="hl-fn">deleteCreatorSession</span>(params.id);
+  <span class="hl-kw">return</span> NextResponse.<span class="hl-fn">json</span>({ success: <span class="hl-kw">true</span> });
+}</code></pre>
+        </div>
+
+        <h4>DB Helper Methods to add</h4>
+        <div class="code-block">
+          <div class="code-label">src/db/nebuladb-helper.ts — add these three methods</div>
+          <pre><code><span class="hl-kw">async</span> <span class="hl-fn">getCreatorSessions</span>(userId: <span class="hl-ty">number</span>) {
+  <span class="hl-kw">const</span> cols = <span class="hl-kw">await</span> <span class="hl-fn">getTypedCollections</span>();
+  <span class="hl-kw">return</span> (<span class="hl-kw">await</span> cols.creator_sessions.<span class="hl-fn">find</span>({ user_id: userId.<span class="hl-fn">toString</span>() }).<span class="hl-fn">toArray</span>()) ?? [];
+}
+
+<span class="hl-kw">async</span> <span class="hl-fn">upsertCreatorSession</span>(session: <span class="hl-ty">any</span>) {
+  <span class="hl-kw">const</span> cols = <span class="hl-kw">await</span> <span class="hl-fn">getTypedCollections</span>();
+  <span class="hl-kw">if</span> (session.id) {
+    <span class="hl-kw">await</span> cols.creator_sessions.<span class="hl-fn">update</span>({ id: session.id }, { $set: session });
+    <span class="hl-kw">return</span> session;
+  }
+  <span class="hl-kw">const</span> id = <span class="hl-str">`cs-`</span> + Date.<span class="hl-fn">now</span>().<span class="hl-fn">toString</span>();
+  <span class="hl-kw">const</span> doc = { ...session, id, createdAt: <span class="hl-kw">new</span> <span class="hl-ty">Date</span>().<span class="hl-fn">toISOString</span>() };
+  <span class="hl-kw">return</span> cols.creator_sessions.<span class="hl-fn">insert</span>(doc);
+}
+
+<span class="hl-kw">async</span> <span class="hl-fn">deleteCreatorSession</span>(id: <span class="hl-ty">string</span>) {
+  <span class="hl-kw">const</span> cols = <span class="hl-kw">await</span> <span class="hl-fn">getTypedCollections</span>();
+  <span class="hl-kw">return</span> cols.creator_sessions.<span class="hl-fn">delete</span>({ id });
+}</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="impl-block">
+      <div class="impl-header">
+        <div class="impl-num num-pink">3</div>
+        <div>
+          <div class="impl-title">Update CreatorAlgorithmApp — auto-save &amp; resume</div>
+          <div class="impl-subtitle">src/components/CreatorAlgorithm.tsx</div>
+        </div>
+      </div>
+      <div class="impl-body">
+        <p>Add two props and three state-driven side effects to the existing component. The component already manages <code class="inline">phase</code>, <code class="inline">context</code>, <code class="inline">systems</code>, <code class="inline">selectedSystem</code>, <code class="inline">constraint</code>, and <code class="inline">aiInsights</code> — all of these need to be saved.</p>
+
+        <ul class="step-list">
+          <li>Add <code class="inline">sessionId</code> and <code class="inline">onSessionSaved</code> props so the parent can pass in a session to resume and receive the saved session ID back.</li>
+          <li>On mount, if <code class="inline">sessionId</code> is provided, fetch <code class="inline">GET /api/creator-sessions</code>, find the matching session, and restore all state fields (<code class="inline">phase</code>, <code class="inline">context</code>, <code class="inline">systems</code>, etc.).</li>
+          <li>Add a <code class="inline">useEffect</code> that watches <code class="inline">phase</code> — whenever phase advances (1→2, 2→3), call <code class="inline">POST /api/creator-sessions</code> with the current full state. Store the returned session <code class="inline">id</code> locally so subsequent saves become updates.</li>
+          <li>Auto-generate the session title from the first 60 characters of <code class="inline">context.problem</code> so it shows meaningfully in the sidebar.</li>
+          <li>When the user clicks "Start Over", call <code class="inline">DELETE /api/creator-sessions/[id]</code> if a session ID exists, or keep it as a completed session (user's choice via a confirmation dialog).</li>
+        </ul>
+
+        <div class="code-block">
+          <div class="code-label">src/components/CreatorAlgorithm.tsx — new props + auto-save effect</div>
+          <pre><code><span class="hl-kw">interface</span> <span class="hl-ty">CreatorAlgorithmProps</span> {
+  onClose?: () =&gt; <span class="hl-ty">void</span>;
+  sessionId?: <span class="hl-ty">string</span>;           <span class="hl-cmt">// Pass to resume a saved session</span>
+  onSessionSaved?: (id: <span class="hl-ty">string</span>, title: <span class="hl-ty">string</span>) =&gt; <span class="hl-ty">void</span>;
+}
+
+<span class="hl-cmt">// Inside the component — add after existing useState declarations:</span>
+<span class="hl-kw">const</span> [activeSessionId, setActiveSessionId] = <span class="hl-fn">useState</span>&lt;<span class="hl-ty">string</span> | <span class="hl-kw">null</span>&gt;(sessionId ?? <span class="hl-kw">null</span>);
+
+<span class="hl-cmt">// Load existing session on mount</span>
+<span class="hl-fn">useEffect</span>(() =&gt; {
+  <span class="hl-kw">if</span> (!sessionId) <span class="hl-kw">return</span>;
+  fetch(<span class="hl-str">'/api/creator-sessions'</span>)
+    .<span class="hl-fn">then</span>(r =&gt; r.<span class="hl-fn">json</span>())
+    .<span class="hl-fn">then</span>(({ sessions }) =&gt; {
+      <span class="hl-kw">const</span> s = sessions.<span class="hl-fn">find</span>((s: <span class="hl-ty">any</span>) =&gt; s.id === sessionId);
+      <span class="hl-kw">if</span> (!s) <span class="hl-kw">return</span>;
+      <span class="hl-fn">setPhase</span>(s.phase);
+      <span class="hl-fn">setContext</span>(s.context);
+      <span class="hl-fn">setSystems</span>(s.systems);
+      <span class="hl-fn">setSelectedSystem</span>(s.selectedSystem);
+      <span class="hl-fn">setConstraint</span>(s.constraint);
+      <span class="hl-fn">setAiInsights</span>(s.aiInsights);
+    });
+}, [sessionId]);
+
+<span class="hl-cmt">// Auto-save whenever phase, systems, or selectedSystem changes</span>
+<span class="hl-fn">useEffect</span>(() =&gt; {
+  <span class="hl-kw">if</span> (phase === <span class="hl-num">1</span> &amp;&amp; !activeSessionId) <span class="hl-kw">return</span>; <span class="hl-cmt">// nothing to save yet</span>
+  <span class="hl-kw">const</span> title = context.problem.<span class="hl-fn">slice</span>(<span class="hl-num">0</span>, <span class="hl-num">60</span>) || <span class="hl-str">'Creator Session'</span>;
+  fetch(<span class="hl-str">'/api/creator-sessions'</span>, {
+    method: <span class="hl-str">'POST'</span>,
+    headers: { <span class="hl-str">'Content-Type'</span>: <span class="hl-str">'application/json'</span> },
+    body: <span class="hl-ty">JSON</span>.<span class="hl-fn">stringify</span>({
+      id: activeSessionId,
+      title, phase, context, systems, selectedSystem, constraint, aiInsights
+    })
+  })
+  .<span class="hl-fn">then</span>(r =&gt; r.<span class="hl-fn">json</span>())
+  .<span class="hl-fn">then</span>(({ session }) =&gt; {
+    <span class="hl-kw">if</span> (!activeSessionId) {
+      <span class="hl-fn">setActiveSessionId</span>(session.id);
+      onSessionSaved?.(session.id, title);
+    }
+  });
+}, [phase, systems, selectedSystem, aiInsights]);
+</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="impl-block">
+      <div class="impl-header">
+        <div class="impl-num num-pink">4</div>
+        <div>
+          <div class="impl-title">Surface saved sessions in RightSideBar</div>
+          <div class="impl-subtitle">src/components/RightSideBar.tsx</div>
+        </div>
+      </div>
+      <div class="impl-body">
+        <p>The sidebar currently shows Notes and four action buttons. Add a "Creator Sessions" section below the buttons, mirroring the existing notes list pattern.</p>
+
+        <ul class="step-list">
+          <li>Add <code class="inline">creatorSessions</code> and <code class="inline">onCreatorSessionSelect</code> props alongside the existing <code class="inline">notes</code> / <code class="inline">onNoteSelect</code> props.</li>
+          <li>Fetch <code class="inline">GET /api/creator-sessions</code> on mount (or receive sessions as a prop from the parent, matching how notes are passed down from ChatBody).</li>
+          <li>Render each session as a clickable row below the Creator Algorithm button — show the title and a phase indicator badge ("Phase 1", "Phase 2", "Complete").</li>
+          <li>On click, call <code class="inline">onCreatorSessionSelect(session)</code> which opens <code class="inline">CreatorAlgorithmApp</code> and passes <code class="inline">sessionId</code> to it.</li>
+          <li>Add an <code class="inline">X</code> delete button on each row that calls <code class="inline">DELETE /api/creator-sessions/[id]</code>.</li>
+        </ul>
+
+        <div class="code-block">
+          <div class="code-label">RightSideBar — Creator Sessions section (JSX addition)</div>
+          <pre><code><span class="hl-cmt">// After the existing Creator Algorithm button:</span>
+{creatorSessions.length &gt; <span class="hl-num">0</span> &amp;&amp; (
+  &lt;div className=<span class="hl-str">"creatorSessionsList"</span>&gt;
+    &lt;div className=<span class="hl-str">"sessionsSectionLabel"</span>&gt;Saved Sessions&lt;/div&gt;
+    {creatorSessions
+      .<span class="hl-fn">sort</span>((a, b) =&gt; <span class="hl-kw">new</span> <span class="hl-ty">Date</span>(b.updatedAt).<span class="hl-fn">getTime</span>() - <span class="hl-kw">new</span> <span class="hl-ty">Date</span>(a.updatedAt).<span class="hl-fn">getTime</span>())
+      .<span class="hl-fn">map</span>(session =&gt; (
+        &lt;div key={session.id} className=<span class="hl-str">"sessionItem"</span>
+             onClick={() =&gt; <span class="hl-fn">onCreatorSessionSelect</span>(session)}&gt;
+          &lt;Sparkle size={<span class="hl-num">14</span>} /&gt;
+          &lt;span className=<span class="hl-str">"sessionTitle"</span>&gt;{session.title}&lt;/span&gt;
+          &lt;span className=<span class="hl-str">"phaseBadge"</span>&gt;
+            {session.phase === <span class="hl-num">3</span> ? <span class="hl-str">'✓ Done'</span> : <span class="hl-str">`Phase ${session.phase}`</span>}
+          &lt;/span&gt;
+          &lt;button onClick={(e) =&gt; { e.<span class="hl-fn">stopPropagation</span>(); <span class="hl-fn">handleDeleteSession</span>(session.id); }}&gt;
+            &lt;X size={<span class="hl-num">14</span>} /&gt;
+          &lt;/button&gt;
+        &lt;/div&gt;
+    ))}
+  &lt;/div&gt;
+)}</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- TRACK 2: Memory Loop -->
+  <div class="section" id="memory">
+    <div class="section-label">Track 2 · Critical</div>
+    <h2>Close the Memory Loop</h2>
+    <p>
+      The most impactful single change in this entire plan. The <code class="inline">memory_nodes</code>,
+      <code class="inline">interest_metrics</code>, <code class="inline">goal_metrics</code>, and
+      <code class="inline">personality_traits</code> collections already store rich user data.
+      This track makes the AI actually use it.
+    </p>
+
+    <div class="impl-block">
+      <div class="impl-header">
+        <div class="impl-num num-red">A</div>
+        <div>
+          <div class="impl-title">Inject memory context into every chat prompt</div>
+          <div class="impl-subtitle">src/app/api/chat/route.ts</div>
+        </div>
+      </div>
+      <div class="impl-body">
+        <p>Before calling Gemini, fetch the user's memory data and prepend a system prompt. The user's JWT cookie is already available in the route — use it to look up their profile.</p>
+        <div class="code-block">
+          <div class="code-label">src/app/api/chat/route.ts — buildSystemPrompt()</div>
+          <pre><code><span class="hl-kw">async function</span> <span class="hl-fn">buildSystemPrompt</span>(userId: <span class="hl-ty">string</span>): <span class="hl-ty">Promise</span>&lt;<span class="hl-ty">string</span>&gt; {
+  <span class="hl-kw">const</span> db = <span class="hl-kw">await</span> <span class="hl-fn">getNebulaDBHelper</span>();
+
+  <span class="hl-kw">const</span> [nodes, interests, goals, traits] = <span class="hl-kw">await</span> <span class="hl-ty">Promise</span>.<span class="hl-fn">all</span>([
+    db.<span class="hl-fn">getRecentMemoryNodes</span>(userId, <span class="hl-num">15</span>),
+    db.<span class="hl-fn">getTopInterests</span>(userId, <span class="hl-num">5</span>),
+    db.<span class="hl-fn">getActiveGoals</span>(userId),
+    db.<span class="hl-fn">getPersonalityTraits</span>(userId),
+  ]);
+
+  <span class="hl-kw">if</span> (!nodes.length &amp;&amp; !interests.length) <span class="hl-kw">return</span> <span class="hl-str">''</span>;
+
+  <span class="hl-kw">return</span> <span class="hl-str">`You are a personal AI assistant with persistent memory about this user.
+
+Known interests: ${interests.<span class="hl-fn">map</span>(i =&gt; i.topic).<span class="hl-fn">join</span>(', ')}
+Active goals: ${goals.<span class="hl-fn">map</span>(g =&gt; g.description).<span class="hl-fn">join</span>(' | ')}
+Personality: ${traits.<span class="hl-fn">map</span>(t =&gt; t.trait).<span class="hl-fn">join</span>(', ')}
+Recent topics: ${nodes.<span class="hl-fn">map</span>(n =&gt; n.label).<span class="hl-fn">join</span>(', ')}
+
+Use this context to personalize your responses naturally — don't narrate or recite it,
+just let it inform your tone, examples, and recommendations.`</span>;
+}
+
+<span class="hl-cmt">// In the POST handler, before calling Gemini:</span>
+<span class="hl-kw">const</span> systemPrompt = <span class="hl-kw">await</span> <span class="hl-fn">buildSystemPrompt</span>(userId);
+<span class="hl-kw">const</span> fullPrompt = systemPrompt
+  ? <span class="hl-str">`${systemPrompt}\n\nUser: ${message}`</span>
+  : message;
+</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="impl-block">
+      <div class="impl-header">
+        <div class="impl-num num-red">B</div>
+        <div>
+          <div class="impl-title">Auto-extract memory from every conversation</div>
+          <div class="impl-subtitle">src/app/api/chat/route.ts (background call after response)</div>
+        </div>
+      </div>
+      <div class="impl-body">
+        <p>After streaming the response back to the user, fire-and-forget a background extraction call. Do not await it — the user should not wait for extraction to complete.</p>
+        <div class="code-block">
+          <div class="code-label">src/app/api/memory/extract/route.ts — new endpoint</div>
+          <pre><code><span class="hl-cmt">// POST /api/memory/extract</span>
+<span class="hl-cmt">// Body: { userId, userMessage, aiResponse }</span>
+<span class="hl-cmt">// Call Gemini with an extraction prompt to pull entities, topics, goals</span>
+<span class="hl-cmt">// Write results to memory_nodes + interest_metrics</span>
+
+<span class="hl-kw">const</span> extractionPrompt = <span class="hl-str">`From this conversation exchange, extract structured data.
+Return JSON only, no markdown:
+{
+  "topics": ["string"],
+  "entities": ["string"],
+  "interests": [{"topic": "string", "strength": 0.0-1.0}],
+  "goals": ["string"],
+  "sentiment": "positive"|"neutral"|"negative"
+}
+
+User said: ${userMessage}
+AI responded: ${aiResponse}`</span>;
+</code></pre>
+        </div>
+        <div class="callout info">
+          <div class="callout-title">Implementation Note</div>
+          Fire the extraction with <code class="inline">fetch('/api/memory/extract', { ... })</code> after returning the chat response. Use <code class="inline">waitUntil</code> on Vercel Edge functions, or simply don't await the fetch call on a serverless function — Vercel keeps the function alive briefly after the response is sent.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- TRACK 3: Model Switching -->
+  <div class="section" id="models">
+    <div class="section-label">Track 3 · High Priority</div>
+    <h2>Live Model Switching</h2>
+    <p>
+      The <code class="inline">ModelSelect</code> component and CSS module already exist. The backend supports
+      Gemini, DeepSeek, OpenAI, and Claude. The missing piece is wiring the selected model
+      from the UI through to <code class="inline">/api/chat</code>.
+    </p>
+
+    <h3>Changes Required</h3>
+    <ul class="step-list">
+      <li>Add <code class="inline">selectedModel</code> to ContextProvider global state alongside the existing <code class="inline">input</code> and <code class="inline">chatHistory</code>.</li>
+      <li>Render the <code class="inline">ModelSelect</code> component in the ChatBody header. On change, update global <code class="inline">selectedModel</code>.</li>
+      <li>Pass <code class="inline">model</code> in the body of every <code class="inline">POST /api/chat</code> call from <code class="inline">getChatResponse()</code>.</li>
+      <li>In <code class="inline">/api/chat/route.ts</code>, read <code class="inline">body.model</code> and route to the correct provider. Add a <code class="inline">routeToProvider(model, message)</code> function that maps model strings to their API calls.</li>
+      <li>Each AI response card in the chat UI should show a small badge indicating which model answered — this creates transparency and builds trust.</li>
+    </ul>
+
+    <div class="code-block">
+      <div class="code-label">src/app/api/chat/route.ts — model routing</div>
+      <pre><code><span class="hl-kw">const</span> MODEL_ROUTES: Record&lt;<span class="hl-ty">string</span>, <span class="hl-str">'gemini'</span> | <span class="hl-str">'deepseek'</span> | <span class="hl-str">'openai'</span> | <span class="hl-str">'anthropic'</span>&gt; = {
+  <span class="hl-str">'gemini-2.5-flash'</span>:   <span class="hl-str">'gemini'</span>,
+  <span class="hl-str">'gemini-2.0-flash'</span>:   <span class="hl-str">'gemini'</span>,
+  <span class="hl-str">'deepseek-chat'</span>:      <span class="hl-str">'deepseek'</span>,
+  <span class="hl-str">'gpt-4o'</span>:             <span class="hl-str">'openai'</span>,
+  <span class="hl-str">'claude-3-5-sonnet'</span>:  <span class="hl-str">'anthropic'</span>,
+};
+</code></pre>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- TRACK 4: Notes & RAG -->
+  <div class="section" id="rag">
+    <div class="section-label">Track 4 · High Priority</div>
+    <h2>Notes → Chat Context &amp; Document RAG</h2>
+
+    <div class="impl-block">
+      <div class="impl-header">
+        <div class="impl-num num-yellow">A</div>
+        <div>
+          <div class="impl-title">Notes context injection from chat input</div>
+          <div class="impl-subtitle">src/components/ChatBody.tsx + src/app/api/chat/route.ts</div>
+        </div>
+      </div>
+      <div class="impl-body">
+        <p>When a user types in the chat input, detect a <code class="inline">@note:</code> or <code class="inline">/note</code> prefix. Show a dropdown of matching saved notes. On selection, inject the note content into the prompt context.</p>
+        <ul class="step-list">
+          <li>In <code class="inline">ChatBody.tsx</code>, add a <code class="inline">@</code>-mention detector in the textarea's <code class="inline">onChange</code> handler. When <code class="inline">@</code> is typed, fetch <code class="inline">GET /api/notes/load</code> and show a filterable dropdown.</li>
+          <li>When a note is selected, replace the <code class="inline">@query</code> with a <code class="inline">[[note-id]]</code> reference in the input.</li>
+          <li>In <code class="inline">getChatResponse()</code>, parse out any <code class="inline">[[note-id]]</code> references before sending, fetch those notes, and include them as context in the request body.</li>
+          <li>In <code class="inline">/api/chat/route.ts</code>, prepend injected notes to the prompt: <em>"The user is referencing this note: [content]"</em>.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="impl-block">
+      <div class="impl-header">
+        <div class="impl-num num-yellow">B</div>
+        <div>
+          <div class="impl-title">Complete the Pinecone RAG pipeline</div>
+          <div class="impl-subtitle">src/app/api/upload/route.ts + src/lib/utils.ts</div>
+        </div>
+      </div>
+      <div class="impl-body">
+        <p><code class="inline">@pinecone-database/pinecone</code> is installed. <code class="inline">src/lib/utils.ts</code> has <code class="inline">indexGitHubRepo</code>, <code class="inline">extractGitHubURL</code>, and <code class="inline">runRAGChain</code>. The upload endpoint exists. Three steps to make it work:</p>
+        <ul class="step-list">
+          <li><strong>Upload:</strong> When a file is uploaded via <code class="inline">/api/upload</code>, chunk it, embed each chunk with Gemini embeddings (<code class="inline">text-embedding-004</code>), and upsert to Pinecone with <code class="inline">user_id</code> metadata.</li>
+          <li><strong>Retrieve:</strong> On every chat request, embed the user's message and query Pinecone for the top-5 similar chunks owned by this user. Add them to the system prompt as "Relevant documents:".</li>
+          <li><strong>UI:</strong> Add a file upload button to the chat input toolbar. Show a list of uploaded documents in the sidebar.</li>
+        </ul>
+        <div class="callout warn">
+          <div class="callout-title">Env Vars Needed</div>
+          Add <code class="inline">PINECONE_API_KEY</code> and <code class="inline">PINECONE_INDEX</code> to Vercel environment variables. Create a Pinecone index with dimension 768 (Gemini text-embedding-004).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- TRACK 5: Onboarding -->
+  <div class="section" id="onboarding">
+    <div class="section-label">Track 5 · Medium Priority</div>
+    <h2>First-Run Onboarding</h2>
+    <p>
+      New users land on a blank chat with no explanation of what makes MyChatBrain different from
+      a generic AI wrapper. A 3-step onboarding modal primes the memory graph and sets expectations.
+    </p>
+
+    <table>
+      <thead>
+        <tr><th>Step</th><th>What the user does</th><th>What we store</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1 — Who are you?</strong></td>
+          <td>Name, role, what they're working on</td>
+          <td><code class="inline">users.display_name</code>, first <code class="inline">interest_metrics</code> seeds</td>
+        </tr>
+        <tr>
+          <td><strong>2 — What are your goals?</strong></td>
+          <td>3 goals, free text</td>
+          <td>Initial <code class="inline">goal_metrics</code> records</td>
+        </tr>
+        <tr>
+          <td><strong>3 — Pick your AI</strong></td>
+          <td>Select default model, see which ones are available</td>
+          <td><code class="inline">settings.defaultModel</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>Gate the onboarding on a <code class="inline">settings.onboardingComplete</code> flag. Check it in ContextProvider on load — if false, show the <code class="inline">OnboardingModal</code> before the main UI.</p>
+
+    <h3>Implementation Files</h3>
+    <span class="file">src/components/OnboardingModal.tsx</span>
+    <span class="file">src/app/api/onboarding/route.ts</span>
+    <span class="file">src/context/ContextProvider.tsx</span>
+  </div>
+
+  <hr />
+
+  <!-- TRACK 6: Auth -->
+  <div class="section">
+    <div class="section-label">Track 6 · Polish</div>
+    <h2>Auth &amp; Session Polish</h2>
+    <p>The custom JWT system works but has rough edges worth cleaning up before more users join.</p>
+
+    <table>
+      <thead>
+        <tr><th>Issue</th><th>Fix</th><th>File</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>No "remember me" — 7-day token expires silently</td>
+          <td>Refresh token on each request if within 48h of expiry</td>
+          <td><code class="inline">middleware.ts</code></td>
+        </tr>
+        <tr>
+          <td>No password reset flow</td>
+          <td>Email-based reset via Resend or Nodemailer + a <code class="inline">reset_tokens</code> DB collection</td>
+          <td><code class="inline">src/app/api/auth/reset/</code></td>
+        </tr>
+        <tr>
+          <td>No social login</td>
+          <td>Add Google OAuth via <code class="inline">next-auth</code> (already installed) — skip if Clerk is added later</td>
+          <td><code class="inline">src/app/api/auth/[...nextauth]/</code></td>
+        </tr>
+        <tr>
+          <td>Register/login forms have no loading state</td>
+          <td>Disable submit button and show spinner on <code class="inline">isLoading</code></td>
+          <td><code class="inline">src/app/login/page.tsx</code>, <code class="inline">src/app/register/page.tsx</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr />
+
+  <!-- Roadmap -->
+  <div class="section" id="roadmap">
+    <div class="section-label">Delivery Timeline</div>
+    <h2>Sprint Roadmap</h2>
+
+    <div class="timeline">
+      <div class="tl-item sprint1">
+        <div class="tl-label">Sprint 1 · Weeks 1–2</div>
+        <div class="tl-title">Foundation — Memory Loop + Creator Sessions</div>
+        <div class="tl-tasks">
+          ✦ Add <code class="inline">creator_sessions</code> DB collection<br />
+          ✦ Build <code class="inline">/api/creator-sessions</code> CRUD routes<br />
+          ✦ Update CreatorAlgorithmApp with auto-save + resume<br />
+          ✦ Surface saved sessions in RightSideBar<br />
+          ✦ Inject user memory into every chat system prompt<br />
+          ✦ Build <code class="inline">/api/memory/extract</code> background extraction route
+        </div>
+      </div>
+
+      <div class="tl-item sprint2">
+        <div class="tl-label">Sprint 2 · Weeks 3–4</div>
+        <div class="tl-title">Model Switching + Notes Context</div>
+        <div class="tl-tasks">
+          ✦ Wire ModelSelect to ContextProvider and chat API<br />
+          ✦ Route requests to correct provider based on selected model<br />
+          ✦ Show model badge on each AI message bubble<br />
+          ✦ Add <code class="inline">@note</code> mention detection in chat input<br />
+          ✦ Inject referenced notes into prompt context
+        </div>
+      </div>
+
+      <div class="tl-item sprint3">
+        <div class="tl-label">Sprint 3 · Weeks 5–6</div>
+        <div class="tl-title">Document RAG + Onboarding</div>
+        <div class="tl-tasks">
+          ✦ Complete Pinecone embed + upsert in upload endpoint<br />
+          ✦ Query Pinecone on each chat request for relevant context<br />
+          ✦ Add document list UI to sidebar<br />
+          ✦ Build OnboardingModal with 3-step flow<br />
+          ✦ Seed initial memory_nodes and goal_metrics from onboarding answers
+        </div>
+      </div>
+
+      <div class="tl-item sprint4">
+        <div class="tl-label">Sprint 4 · Weeks 7–8</div>
+        <div class="tl-title">Auth Polish + Conversation Export</div>
+        <div class="tl-tasks">
+          ✦ Token refresh middleware<br />
+          ✦ Password reset flow<br />
+          ✦ Google OAuth via next-auth (optional)<br />
+          ✦ Export conversation as Markdown / PDF<br />
+          ✦ Share a conversation via public link
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- Summary table -->
+  <div class="section">
+    <div class="section-label">Master Checklist</div>
+    <h2>All Implementation Tasks</h2>
+
+    <table>
+      <thead>
+        <tr><th>Track</th><th>Task</th><th>Files</th><th>Sprint</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Creator Sessions</strong></td>
+          <td>Add <code class="inline">creator_sessions</code> collection</td>
+          <td><code class="inline">src/db/nebuladb.ts</code></td>
+          <td>1</td>
+        </tr>
+        <tr>
+          <td><strong>Creator Sessions</strong></td>
+          <td>CRUD API routes</td>
+          <td><code class="inline">src/app/api/creator-sessions/</code></td>
+          <td>1</td>
+        </tr>
+        <tr>
+          <td><strong>Creator Sessions</strong></td>
+          <td>DB helper methods</td>
+          <td><code class="inline">src/db/nebuladb-helper.ts</code></td>
+          <td>1</td>
+        </tr>
+        <tr>
+          <td><strong>Creator Sessions</strong></td>
+          <td>Component auto-save + resume</td>
+          <td><code class="inline">src/components/CreatorAlgorithm.tsx</code></td>
+          <td>1</td>
+        </tr>
+        <tr>
+          <td><strong>Creator Sessions</strong></td>
+          <td>Sidebar session list</td>
+          <td><code class="inline">src/components/RightSideBar.tsx</code></td>
+          <td>1</td>
+        </tr>
+        <tr>
+          <td><strong>Memory Loop</strong></td>
+          <td>Build system prompt from user profile</td>
+          <td><code class="inline">src/app/api/chat/route.ts</code></td>
+          <td>1</td>
+        </tr>
+        <tr>
+          <td><strong>Memory Loop</strong></td>
+          <td>Background entity extraction route</td>
+          <td><code class="inline">src/app/api/memory/extract/route.ts</code></td>
+          <td>1</td>
+        </tr>
+        <tr>
+          <td><strong>Models</strong></td>
+          <td>Add selectedModel to ContextProvider</td>
+          <td><code class="inline">src/context/ContextProvider.tsx</code></td>
+          <td>2</td>
+        </tr>
+        <tr>
+          <td><strong>Models</strong></td>
+          <td>Render ModelSelect in chat header</td>
+          <td><code class="inline">src/components/ChatBody.tsx</code></td>
+          <td>2</td>
+        </tr>
+        <tr>
+          <td><strong>Models</strong></td>
+          <td>Provider routing in chat API</td>
+          <td><code class="inline">src/app/api/chat/route.ts</code></td>
+          <td>2</td>
+        </tr>
+        <tr>
+          <td><strong>Notes</strong></td>
+          <td>@mention detection + dropdown</td>
+          <td><code class="inline">src/components/ChatBody.tsx</code></td>
+          <td>2</td>
+        </tr>
+        <tr>
+          <td><strong>Notes</strong></td>
+          <td>Note injection into chat context</td>
+          <td><code class="inline">src/app/api/chat/route.ts</code></td>
+          <td>2</td>
+        </tr>
+        <tr>
+          <td><strong>RAG</strong></td>
+          <td>Pinecone embed + upsert on upload</td>
+          <td><code class="inline">src/app/api/upload/route.ts</code></td>
+          <td>3</td>
+        </tr>
+        <tr>
+          <td><strong>RAG</strong></td>
+          <td>Pinecone retrieval on every chat</td>
+          <td><code class="inline">src/app/api/chat/route.ts</code></td>
+          <td>3</td>
+        </tr>
+        <tr>
+          <td><strong>Onboarding</strong></td>
+          <td>3-step onboarding modal</td>
+          <td><code class="inline">src/components/OnboardingModal.tsx</code></td>
+          <td>3</td>
+        </tr>
+        <tr>
+          <td><strong>Onboarding</strong></td>
+          <td>Seed memory from onboarding answers</td>
+          <td><code class="inline">src/app/api/onboarding/route.ts</code></td>
+          <td>3</td>
+        </tr>
+        <tr>
+          <td><strong>Auth</strong></td>
+          <td>Token refresh in middleware</td>
+          <td><code class="inline">middleware.ts</code></td>
+          <td>4</td>
+        </tr>
+        <tr>
+          <td><strong>Auth</strong></td>
+          <td>Password reset flow</td>
+          <td><code class="inline">src/app/api/auth/reset/</code></td>
+          <td>4</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    MyChatBrain · Value-Added Product Implementation Plan · Generated 2026-05-31
+  </div>
+
+</div>
+</body>
+</html>
